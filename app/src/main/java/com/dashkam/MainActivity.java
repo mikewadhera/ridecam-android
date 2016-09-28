@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.os.PowerManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -31,6 +32,9 @@ import android.view.ViewGroup;
 
 import android.view.WindowManager;
 import android.widget.TextView;
+
+import static android.R.attr.permission;
+import static android.R.attr.start;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -61,41 +65,17 @@ public class MainActivity extends AppCompatActivity {
      */
     public static Camera mCamera;
 
-    public static SurfaceHolder mPreviewSurfaceHolder;
-
-    public static void onPreviewReady(SurfaceHolder surfaceHolder) {
-        mPreviewSurfaceHolder = surfaceHolder;
-        // Try starting preview (if we don't have mCamera yet we'll try again in onCameraPermission)
-        startPreview();
-    }
-
-    public static void startPreview() {
-        if (mCamera != null &&
-                mPreviewSurfaceHolder != null) {
-            try {
-                mCamera.setPreviewDisplay(mPreviewSurfaceHolder);
-                mCamera.startPreview();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+    public static PreviewView mPreviewView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Full screen layout
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        // Check permissions
-        MainActivity.checkPermissions(this, Manifest.permission.CAMERA, PERMISSIONS_ID_CAMERA);
-        MainActivity.checkPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION, PERMISSIONS_ID_GPS);
-
-        // Try eagerly acquiring camera
-        //  - if we don't have permission we'll try again in onCameraPermission
-        acquireCamera();
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -108,21 +88,37 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onResume() {
+        Log.d(TAG, "onResume");
         super.onResume();
 
-        acquireCamera();
+        boolean hasCam =
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+        boolean hasGps =
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+
+        if (hasCam) {
+            if (hasGps) {
+                acquireCamera();
+                // Fix for frozen preview when resuming from sleep button
+                // See onPause for more
+                if (mPreviewView != null && mPreviewView.getVisibility() != View.VISIBLE) {
+                    mPreviewView.setVisibility(View.VISIBLE);
+                }
+            } else {
+                pauseToRequestPermission(this, Manifest.permission.ACCESS_FINE_LOCATION, PERMISSIONS_ID_GPS);
+            }
+        } else {
+            pauseToRequestPermission(this, Manifest.permission.CAMERA, PERMISSIONS_ID_CAMERA);
+        }
     }
 
     @Override
     public void onPause() {
+        Log.d(TAG, "onPause");
         super.onPause();
 
-        releaseCamera();
-    }
-
-    public void onCameraPermission() {
-        acquireCamera();
-        startPreview();
+        stopPreviewReleaseCamera();
+        destroySurfaceViewIfPowerButtonPushed();
     }
 
     public void acquireCamera() {
@@ -139,7 +135,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void releaseCamera() {
+    public static void startPreview() {
+        if (mCamera != null && mPreviewView != null) {
+            try {
+                mCamera.setPreviewDisplay(mPreviewView.getHolder());
+                mCamera.startPreview();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void stopPreviewReleaseCamera() {
         if (mCamera != null) {
             mCamera.stopPreview();
             mCamera.release();
@@ -147,16 +154,38 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // HACK: If the user pushes the power/sleep button then onStop() is not called
+    // which means the preview's underlying SurfaceView isn't destroyed
+    // which means surfaceChanged won't be called in onResume
+    // which means startPreview won't be called back (resutling in a frozen preview)
+    // So, if the screen is off during onPause, assume we are sleeping
+    // and forcefully destory the preview
+    public void destroySurfaceViewIfPowerButtonPushed() {
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        boolean sleepButtonPushed = !pm.isScreenOn();
+        if (sleepButtonPushed) {
+            Log.d(TAG, "Sleep Button pushed, destroying preview");
+            if (mPreviewView != null) {
+                mPreviewView.setVisibility(View.GONE);
+            }
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult");
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
         switch (requestCode) {
             case PERMISSIONS_ID_CAMERA: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    onCameraPermission();
+                    acquireCamera();
+                    startPreview();
+
 
                 } else {
 
@@ -171,14 +200,16 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
 
                 } else {
 
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
                 }
+
+                acquireCamera();
+                startPreview();
+
                 return;
             }
         }
@@ -189,10 +220,13 @@ public class MainActivity extends AppCompatActivity {
         public PreviewView(Context context, AttributeSet attrs) {
             super(context, attrs);
 
-            getHolder().addCallback(this);
+            Log.d(TAG, "PreviewView()");
+
+            MainActivity.mPreviewView = this;
+
+            this.getHolder().addCallback(this);
         }
 
-        public PreviewView(Context context) { super(context); }
 
         @Override
         public void surfaceCreated(SurfaceHolder surfaceHolder) {
@@ -201,7 +235,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-            MainActivity.onPreviewReady(surfaceHolder);
+            Log.d(TAG, "surfaceChanged()");
+            MainActivity.startPreview();
         }
 
         @Override
@@ -235,7 +270,6 @@ public class MainActivity extends AppCompatActivity {
     public static class DashKamFragment extends Fragment {
 
         public DashKamFragment() {
-
         }
 
         public static DashKamFragment factory() {
@@ -288,14 +322,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static void checkPermissions(Activity context, String permission, int requestCode) {
-        if (ContextCompat.checkSelfPermission(context,
-                Manifest.permission.READ_CONTACTS)
-                != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(context,
-                        new String[]{permission},
-                        requestCode);
-        }
+    public static void pauseToRequestPermission(Activity context, String permission, int requestCode) {
+        ActivityCompat.requestPermissions(context,
+                new String[]{permission},
+                requestCode);
     }
 
     public static void setCameraDisplayOrientation(Activity activity,
