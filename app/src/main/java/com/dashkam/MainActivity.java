@@ -4,8 +4,12 @@ import android.Manifest;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
+import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -13,6 +17,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.support.v4.graphics.drawable.DrawableCompat;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -30,8 +35,12 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.app.Service;
+
 import android.view.WindowManager;
 import android.widget.TextView;
+
+import java.lang.ref.WeakReference;
 
 import static android.R.attr.permission;
 import static android.R.attr.start;
@@ -63,9 +72,27 @@ public class MainActivity extends AppCompatActivity {
      * The underlying {@link android.graphics.Camera} owned by activity
      *
      */
-    public static Camera mCamera;
+    private static Camera mCamera;
 
-    public static PreviewView mPreviewView;
+    private static SurfaceView mSurfaceView;
+
+    private static boolean mIsRecording;
+
+    private WeakReference<CameraFragment> mCameraFragment;
+
+    private WeakReference<DashKamFragment> mDashKamFragment;
+
+    public static Camera getCamera() {
+        return mCamera;
+    }
+
+    public static SurfaceView getSurfaceView() {
+        return mSurfaceView;
+    }
+
+    public static boolean isRecording() {
+        return mIsRecording;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,12 +125,15 @@ public class MainActivity extends AppCompatActivity {
 
         if (hasCam) {
             if (hasGps) {
+
                 acquireCamera();
+
                 // Fix for frozen preview when resuming from sleep button
                 // See onPause for more
-                if (mPreviewView != null && mPreviewView.getVisibility() != View.VISIBLE) {
-                    mPreviewView.setVisibility(View.VISIBLE);
+                if (mSurfaceView != null && mSurfaceView.getVisibility() != View.VISIBLE) {
+                    mSurfaceView.setVisibility(View.VISIBLE);
                 }
+
             } else {
                 pauseToRequestPermission(this, Manifest.permission.ACCESS_FINE_LOCATION, PERMISSIONS_ID_GPS);
             }
@@ -117,7 +147,10 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onPause");
         super.onPause();
 
-        stopPreviewReleaseCamera();
+        //if (!mIsRecording) {
+            stopPreviewReleaseCamera();
+        //}
+
         destroySurfaceViewIfPowerButtonPushed();
     }
 
@@ -135,10 +168,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static void startPreview() {
-        if (mCamera != null && mPreviewView != null) {
+    public void startPreview() {
+        if (mCamera != null && mSurfaceView != null) {
             try {
-                mCamera.setPreviewDisplay(mPreviewView.getHolder());
+                mCamera.setPreviewDisplay(mSurfaceView.getHolder());
                 mCamera.startPreview();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -154,6 +187,62 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void toggleRecording() {
+        if (mCamera != null && mSurfaceView != null) {
+            mIsRecording = !mIsRecording;
+            Intent intent = new Intent(MainActivity.this, RecordService.class);
+            if (mIsRecording) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startService(intent);
+            } else {
+                stopService(intent);
+            }
+            renderCameraFragment();
+        }
+    }
+
+    public void startRecordingFailed() {
+        mIsRecording = false;
+        renderCameraFragment();
+    }
+
+    public void renderCameraFragment() {
+        CameraFragment cameraFragment = mCameraFragment.get();
+        if (cameraFragment != null) {
+            cameraFragment.render();
+        }
+    }
+
+    public void setCameraFragment(CameraFragment cameraFragment) {
+        mCameraFragment = new WeakReference<CameraFragment>(cameraFragment);
+    }
+
+    public void setDashKamFragment(DashKamFragment dashKamFragment) {
+        mDashKamFragment = new WeakReference<DashKamFragment>(dashKamFragment);
+    }
+
+    public void setPreviewView(SurfaceView surfaceView) {
+        Log.d(TAG, "setPreviewView");
+        mSurfaceView = surfaceView;
+        mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+                Log.d(TAG, "surfaceChanged");
+                startPreview();
+            }
+
+            @Override
+            public void surfaceCreated(SurfaceHolder surfaceHolder) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+
+            }
+        });
+    }
+
     // HACK: If the user pushes the power/sleep button then onStop() is not called
     // which means the preview's underlying SurfaceView isn't destroyed
     // which means surfaceChanged won't be called in onResume
@@ -164,9 +253,9 @@ public class MainActivity extends AppCompatActivity {
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         boolean sleepButtonPushed = !pm.isScreenOn();
         if (sleepButtonPushed) {
-            Log.d(TAG, "Sleep Button pushed, destroying preview");
-            if (mPreviewView != null) {
-                mPreviewView.setVisibility(View.GONE);
+            Log.d(TAG, "Sleep Button pushed, destroying surface view");
+            if (mSurfaceView != null) {
+                mSurfaceView.setVisibility(View.GONE);
             }
         }
     }
@@ -215,72 +304,86 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static class PreviewView extends SurfaceView implements SurfaceHolder.Callback {
-
-        public PreviewView(Context context, AttributeSet attrs) {
-            super(context, attrs);
-
-            Log.d(TAG, "PreviewView()");
-
-            MainActivity.mPreviewView = this;
-
-            this.getHolder().addCallback(this);
-        }
-
-
-        @Override
-        public void surfaceCreated(SurfaceHolder surfaceHolder) {
-
-        }
-
-        @Override
-        public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-            Log.d(TAG, "surfaceChanged()");
-            MainActivity.startPreview();
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-
-        }
-
-    }
-
     /**
      * A placeholder fragment containing a simple view.
      */
     public static class CameraFragment extends Fragment {
 
+        View mRootView;
+
         public CameraFragment() {
         }
 
         public static CameraFragment factory() {
-            return new CameraFragment();
+            CameraFragment cameraFragment = new CameraFragment();
+            return cameraFragment;
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_camera, container, false);
-            return rootView;
+            mRootView = inflater.inflate(R.layout.fragment_camera, container, false);
+
+            SurfaceView previewView = (SurfaceView)mRootView.findViewById(R.id.camera_preview);
+
+            final MainActivity activity = (MainActivity)getActivity();
+            activity.setCameraFragment(this);
+            activity.setPreviewView(previewView);
+
+            previewView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    activity.toggleRecording();
+                }
+            });
+
+            render();
+
+            return mRootView;
+        }
+
+        public void render() {
+            View previewView = mRootView.findViewById(R.id.camera_preview);
+            Drawable previewViewBackground;
+
+            if (MainActivity.isRecording()) {
+                previewViewBackground = getResources().getDrawable(R.drawable.record_frame_on);
+            } else {
+                previewViewBackground = getResources().getDrawable(R.drawable.record_frame);
+            }
+
+            previewView.setBackground(previewViewBackground);
         }
 
     }
 
     public static class DashKamFragment extends Fragment {
 
+        View mRootView;
+
         public DashKamFragment() {
         }
 
         public static DashKamFragment factory() {
-            return new DashKamFragment();
+            DashKamFragment dashKamFragment = new DashKamFragment();
+            return dashKamFragment;
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_dashkam, container, false);
-            return rootView;
+            mRootView = inflater.inflate(R.layout.fragment_dashkam, container, false);
+
+            final MainActivity activity = (MainActivity)getActivity();
+            activity.setDashKamFragment(this);
+
+            render();
+
+            return mRootView;
+        }
+
+        public void render() {
+
         }
     }
 
@@ -351,5 +454,37 @@ public class MainActivity extends AppCompatActivity {
             result = (info.orientation - degrees + 360) % 360;
         }
         camera.setDisplayOrientation(result);
+    }
+
+    public static class RecordService extends Service {
+
+        public RecordService() {
+        }
+
+        @Override
+        public void onCreate() {
+            Log.d(TAG, "RecordService onCreate");
+
+        }
+
+        @Override
+        public int onStartCommand(Intent intent, int flags, int startId) {
+            // The service is starting, due to a call to startService()
+            Log.d(TAG, "RecordService onStartCommand");
+            return START_STICKY;
+        }
+
+        @Override
+        public IBinder onBind(Intent intent) {
+            Log.d(TAG, "RecordService onBind");
+
+            return null;
+        }
+
+        @Override
+        public void onDestroy() {
+            Log.d(TAG, "RecordService onDestroy");
+        }
+
     }
 }

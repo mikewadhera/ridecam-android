@@ -4,11 +4,10 @@
     android:layout_height="match_parent"
     android:background="#000">
 
-    <view class="com.dashkam.MainActivity$PreviewView"
+    <SurfaceView
         android:id="@+id/camera_preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/record_frame"
         android:padding="24dip"/>
 
 </RelativeLayout>
