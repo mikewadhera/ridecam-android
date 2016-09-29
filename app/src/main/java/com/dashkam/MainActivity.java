@@ -9,12 +9,14 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.support.v4.graphics.drawable.DrawableCompat;
@@ -39,6 +41,7 @@ import android.app.Service;
 
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 
@@ -187,23 +190,56 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void toggleRecording() {
-        if (mCamera != null && mSurfaceView != null) {
-            mIsRecording = !mIsRecording;
-            Intent intent = new Intent(MainActivity.this, RecordService.class);
-            if (mIsRecording) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startService(intent);
-            } else {
-                stopService(intent);
-            }
+    public void setRecording(boolean isRecording) {
+        if (isRecording != mIsRecording) {
+            mIsRecording = isRecording;
             renderCameraFragment();
         }
     }
 
-    public void startRecordingFailed() {
-        mIsRecording = false;
-        renderCameraFragment();
+    public void toggleRecording() {
+        if (mCamera != null && mSurfaceView != null) {
+            if (mIsRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+    }
+
+    public void startRecording() {
+        setRecording(true);
+        ResultReceiver receiver = new ResultReceiver(new Handler()) {
+            @Override
+            protected void onReceiveResult(int code, Bundle data) {
+                if (code == RecordService.RECORD_RESULT_OK) {
+                    flash("Recording Started");
+                } else {
+                    flash("Recording Failed");
+                    setRecording(false);
+                }
+            }
+        };
+        RecordService.start(this, receiver, RecordService.COMMAND_START_RECORDING);
+    }
+
+    public void stopRecording() {
+        setRecording(false);
+        ResultReceiver receiver = new ResultReceiver(new Handler()) {
+            @Override
+            protected void onReceiveResult(int code, Bundle data) {
+                if (code == RecordService.RECORD_RESULT_OK) {
+                    flash("Recording Stopped");
+                } else {
+                    flash("Recording Error");
+                }
+            }
+        };
+        RecordService.start(this, receiver, RecordService.COMMAND_STOP_RECORDING);
+    }
+
+    private void flash(String text) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
 
     public void renderCameraFragment() {
@@ -458,6 +494,29 @@ public class MainActivity extends AppCompatActivity {
 
     public static class RecordService extends Service {
 
+        public static final String RESULT_RECEIVER = "resultReceiver";
+        public static final String VIDEO_PATH = "recordedVideoPath";
+
+        public static final int RECORD_RESULT_OK = 0;
+        public static final int RECORD_RESULT_DEVICE_NO_CAMERA = 1;
+        public static final int RECORD_RESULT_GET_CAMERA_FAILED = 2;
+        public static final int RECORD_RESULT_ALREADY_RECORDING = 3;
+        public static final int RECORD_RESULT_NOT_RECORDING = 4;
+
+        private static final String START_SERVICE_COMMAND = "startServiceCommands";
+        private static final int COMMAND_NONE = -1;
+        private static final int COMMAND_START_RECORDING = 0;
+        private static final int COMMAND_STOP_RECORDING = 1;
+
+        private boolean mRecordingLock;
+
+        public static void start(Context context, ResultReceiver receiver, int command) {
+            Intent intent = new Intent(context, RecordService.class);
+            intent.putExtra(START_SERVICE_COMMAND, command);
+            intent.putExtra(RESULT_RECEIVER, receiver);
+            context.startService(intent);
+        }
+
         public RecordService() {
         }
 
@@ -469,16 +528,55 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-            // The service is starting, due to a call to startService()
             Log.d(TAG, "RecordService onStartCommand");
+
+            switch (intent.getIntExtra(START_SERVICE_COMMAND, COMMAND_NONE)) {
+                case COMMAND_START_RECORDING:
+                    handleStartRecordingCommand(intent);
+                    break;
+                case COMMAND_STOP_RECORDING:
+                    handleStopRecordingCommand(intent);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Cannot start service with illegal commands");
+            }
+
             return START_STICKY;
+        }
+
+        public void handleStartRecordingCommand(Intent intent) {
+            final ResultReceiver receiver = intent.getParcelableExtra(RESULT_RECEIVER);
+
+            if (mRecordingLock) {
+                receiver.send(RECORD_RESULT_ALREADY_RECORDING, null);
+                return;
+            }
+            mRecordingLock = true;
+
+            // ...
+
+            receiver.send(RECORD_RESULT_OK, null);
+        }
+
+        public void handleStopRecordingCommand(Intent intent) {
+            final ResultReceiver receiver = intent.getParcelableExtra(RESULT_RECEIVER);
+
+            if (!mRecordingLock) {
+                receiver.send(RECORD_RESULT_NOT_RECORDING, null);
+                return;
+            }
+
+            // ...
+
+            mRecordingLock = false;
+
+            receiver.send(RECORD_RESULT_OK, null);
         }
 
         @Override
         public IBinder onBind(Intent intent) {
             Log.d(TAG, "RecordService onBind");
-
-            return null;
+            throw new UnsupportedOperationException("Not yet implemented");
         }
 
         @Override
