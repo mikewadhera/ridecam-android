@@ -6,9 +6,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
+import android.media.CamcorderProfile;
+import android.media.MediaRecorder;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -43,7 +47,11 @@ import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import static android.R.attr.permission;
 import static android.R.attr.start;
@@ -52,66 +60,33 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "DashKam";
     private static int CAMERA_ID = 0;
-    private static final int PERMISSIONS_ID_CAMERA = 0;
-    private static final int PERMISSIONS_ID_GPS = 1;
 
-    /**
-     * The {@link android.support.v4.view.PagerAdapter} that will provide
-     * fragments for each of the sections. We use a
-     * {@link FragmentPagerAdapter} derivative, which will keep every
-     * loaded fragment in memory. If this becomes too memory intensive, it
-     * may be best to switch to a
-     * {@link android.support.v4.app.FragmentStatePagerAdapter}.
-     */
     private SectionsPagerAdapter mSectionsPagerAdapter;
 
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
     private ViewPager mViewPager;
 
-    /**
-     *
-     * The underlying {@link android.graphics.Camera} owned by activity
-     *
-     */
     private static Camera mCamera;
 
-    private static SurfaceView mSurfaceView;
-
-    private static boolean mIsRecording;
+    private SurfaceView mSurfaceView;
 
     private WeakReference<CameraFragment> mCameraFragment;
 
     private WeakReference<DashKamFragment> mDashKamFragment;
 
-    public static Camera getCamera() {
-        return mCamera;
-    }
-
-    public static SurfaceView getSurfaceView() {
-        return mSurfaceView;
-    }
-
-    public static boolean isRecording() {
-        return mIsRecording;
-    }
+    public static Camera getCamera() { return mCamera; }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
-        // Full screen layout
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // Create the adapter that will return a fragment for each of the three
-        // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
-        // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
     }
@@ -125,23 +100,29 @@ public class MainActivity extends AppCompatActivity {
                 ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
         boolean hasGps =
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean hasStorage =
+                ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
 
-        if (hasCam) {
-            if (hasGps) {
+        if (hasCam && hasGps && hasStorage) {
 
-                acquireCamera();
+            acquireCamera();
 
-                // Fix for frozen preview when resuming from sleep button
-                // See onPause for more
-                if (mSurfaceView != null && mSurfaceView.getVisibility() != View.VISIBLE) {
-                    mSurfaceView.setVisibility(View.VISIBLE);
-                }
-
-            } else {
-                pauseToRequestPermission(this, Manifest.permission.ACCESS_FINE_LOCATION, PERMISSIONS_ID_GPS);
+            // Fix for frozen preview when resuming from sleep button
+            // See onPause for more
+            if (mSurfaceView != null && mSurfaceView.getVisibility() != View.VISIBLE) {
+                mSurfaceView.setVisibility(View.VISIBLE);
             }
+
         } else {
-            pauseToRequestPermission(this, Manifest.permission.CAMERA, PERMISSIONS_ID_CAMERA);
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    },
+                    1);
+
         }
     }
 
@@ -150,9 +131,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onPause");
         super.onPause();
 
-        //if (!mIsRecording) {
+        if (!isRecording()) {
             stopPreviewReleaseCamera();
-        //}
+        }
 
         destroySurfaceViewIfPowerButtonPushed();
     }
@@ -190,16 +171,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void setRecording(boolean isRecording) {
-        if (isRecording != mIsRecording) {
-            mIsRecording = isRecording;
-            renderCameraFragment();
-        }
-    }
-
     public void toggleRecording() {
         if (mCamera != null && mSurfaceView != null) {
-            if (mIsRecording) {
+            if (isRecording()) {
                 stopRecording();
             } else {
                 startRecording();
@@ -208,7 +182,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startRecording() {
-        setRecording(true);
         ResultReceiver receiver = new ResultReceiver(new Handler()) {
             @Override
             protected void onReceiveResult(int code, Bundle data) {
@@ -216,15 +189,14 @@ public class MainActivity extends AppCompatActivity {
                     flash("Recording Started");
                 } else {
                     flash("Recording Failed");
-                    setRecording(false);
                 }
+                renderCameraFragment();
             }
         };
         RecordService.start(this, receiver, RecordService.COMMAND_START_RECORDING);
     }
 
     public void stopRecording() {
-        setRecording(false);
         ResultReceiver receiver = new ResultReceiver(new Handler()) {
             @Override
             protected void onReceiveResult(int code, Bundle data) {
@@ -233,9 +205,14 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     flash("Recording Error");
                 }
+                renderCameraFragment();
             }
         };
         RecordService.start(this, receiver, RecordService.COMMAND_STOP_RECORDING);
+    }
+
+    public boolean isRecording() {
+        return RecordService.mRecordingLock;
     }
 
     private void flash(String text) {
@@ -303,24 +280,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
-            case PERMISSIONS_ID_CAMERA: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    acquireCamera();
-                    startPreview();
-
-
-                } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                }
-                return;
-            }
-
-            case PERMISSIONS_ID_GPS: {
+            case 1: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -331,18 +291,15 @@ public class MainActivity extends AppCompatActivity {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
                 }
-
-                acquireCamera();
-                startPreview();
-
-                return;
+                break;
             }
         }
+
+        // Very important!
+        acquireCamera();
+        startPreview();
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
     public static class CameraFragment extends Fragment {
 
         View mRootView;
@@ -350,10 +307,7 @@ public class MainActivity extends AppCompatActivity {
         public CameraFragment() {
         }
 
-        public static CameraFragment factory() {
-            CameraFragment cameraFragment = new CameraFragment();
-            return cameraFragment;
-        }
+        public static CameraFragment factory() { return new CameraFragment(); }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -366,10 +320,11 @@ public class MainActivity extends AppCompatActivity {
             activity.setCameraFragment(this);
             activity.setPreviewView(previewView);
 
-            previewView.setOnClickListener(new View.OnClickListener() {
+            previewView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
-                public void onClick(View view) {
+                public boolean onLongClick(View view) {
                     activity.toggleRecording();
+                    return true;
                 }
             });
 
@@ -382,7 +337,9 @@ public class MainActivity extends AppCompatActivity {
             View previewView = mRootView.findViewById(R.id.camera_preview);
             Drawable previewViewBackground;
 
-            if (MainActivity.isRecording()) {
+            final MainActivity activity = (MainActivity)getActivity();
+
+            if (activity.isRecording()) {
                 previewViewBackground = getResources().getDrawable(R.drawable.record_frame_on);
             } else {
                 previewViewBackground = getResources().getDrawable(R.drawable.record_frame);
@@ -400,10 +357,7 @@ public class MainActivity extends AppCompatActivity {
         public DashKamFragment() {
         }
 
-        public static DashKamFragment factory() {
-            DashKamFragment dashKamFragment = new DashKamFragment();
-            return dashKamFragment;
-        }
+        public static DashKamFragment factory() { return new DashKamFragment(); }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -421,12 +375,9 @@ public class MainActivity extends AppCompatActivity {
         public void render() {
 
         }
+
     }
 
-    /**
-     * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
-     * one of the sections/tabs/pages.
-     */
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
         public SectionsPagerAdapter(FragmentManager fm) {
@@ -459,12 +410,7 @@ public class MainActivity extends AppCompatActivity {
             }
             return null;
         }
-    }
 
-    public static void pauseToRequestPermission(Activity context, String permission, int requestCode) {
-        ActivityCompat.requestPermissions(context,
-                new String[]{permission},
-                requestCode);
     }
 
     public static void setCameraDisplayOrientation(Activity activity,
@@ -495,7 +441,6 @@ public class MainActivity extends AppCompatActivity {
     public static class RecordService extends Service {
 
         public static final String RESULT_RECEIVER = "resultReceiver";
-        public static final String VIDEO_PATH = "recordedVideoPath";
 
         public static final int RECORD_RESULT_OK = 0;
         public static final int RECORD_RESULT_DEVICE_NO_CAMERA = 1;
@@ -508,7 +453,9 @@ public class MainActivity extends AppCompatActivity {
         private static final int COMMAND_START_RECORDING = 0;
         private static final int COMMAND_STOP_RECORDING = 1;
 
-        private boolean mRecordingLock;
+        public static boolean mRecordingLock;
+
+        private MediaRecorder mMediaRecorder;
 
         public static void start(Context context, ResultReceiver receiver, int command) {
             Intent intent = new Intent(context, RecordService.class);
@@ -529,6 +476,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
             Log.d(TAG, "RecordService onStartCommand");
+
+            if (intent == null) {
+                throw new UnsupportedOperationException("Cannot start service with null intent");
+            }
 
             switch (intent.getIntExtra(START_SERVICE_COMMAND, COMMAND_NONE)) {
                 case COMMAND_START_RECORDING:
@@ -551,11 +502,59 @@ public class MainActivity extends AppCompatActivity {
                 receiver.send(RECORD_RESULT_ALREADY_RECORDING, null);
                 return;
             }
+
             mRecordingLock = true;
 
-            // ...
+            mMediaRecorder = new MediaRecorder();
+
+            Log.d(TAG, "R: Obtaining Camera");
+            Camera camera = MainActivity.getCamera();
+
+            if (camera == null) {
+                receiver.send(RECORD_RESULT_DEVICE_NO_CAMERA, null);
+                mRecordingLock = false;
+                return;
+            }
+
+            Log.d(TAG, "R: Unlocking Camera");
+            camera.unlock();
+
+            Log.d(TAG, "R: Setting Camera");
+            mMediaRecorder.setCamera(camera);
+
+            Log.d(TAG, "R: Setting sources");
+            //mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+            mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+
+            Log.d(TAG, "R: Setting profile");
+            mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            mMediaRecorder.setVideoSize(1920, 1080);
+            mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
+
+            Log.d(TAG, "R: Setting output file");
+            mMediaRecorder.setOutputFile(getOutputMediaFilePath(MEDIA_TYPE_VIDEO));
+
+            Log.d(TAG, "R: Prepare");
+            try {
+                mMediaRecorder.prepare();
+            } catch (IllegalStateException e) {
+                Log.d(TAG, "IllegalStateException when preparing MediaRecorder: " + e.getMessage());
+                receiver.send(RECORD_RESULT_GET_CAMERA_FAILED, null);
+                mRecordingLock = false;
+                return;
+            } catch (IOException e) {
+                Log.d(TAG, "IOException when preparing MediaRecorder: " + e.getMessage());
+                receiver.send(RECORD_RESULT_GET_CAMERA_FAILED, null);
+                mRecordingLock = false;
+                return;
+            }
+
+            Log.d(TAG, "R: Start");
+            mMediaRecorder.start();
 
             receiver.send(RECORD_RESULT_OK, null);
+
+            Log.d(TAG, "R: Started");
         }
 
         public void handleStopRecordingCommand(Intent intent) {
@@ -566,11 +565,18 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            // ...
+            Log.d(TAG, "R: Stopping");
+            mMediaRecorder.stop();
+
+            Log.d(TAG, "R: Releasing recorder");
+            mMediaRecorder.release();
 
             mRecordingLock = false;
 
             receiver.send(RECORD_RESULT_OK, null);
+
+            Log.d(TAG, "R: shutting down service");
+            stopSelf();
         }
 
         @Override
@@ -582,6 +588,46 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDestroy() {
             Log.d(TAG, "RecordService onDestroy");
+        }
+
+        public static final int MEDIA_TYPE_IMAGE = 1;
+        public static final int MEDIA_TYPE_VIDEO = 2;
+
+        private static String getOutputMediaFilePath(int type){
+            return getOutputMediaFile(type).getAbsolutePath();
+        }
+
+        private static File getOutputMediaFile(int type){
+            // To be safe, you should check that the SDCard is mounted
+            // using Environment.getExternalStorageState() before doing this.
+
+            File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES), TAG);
+            // This location works best if you want the created images to be shared
+            // between applications and persist after your app has been uninstalled.
+
+            // Create the storage directory if it does not exist
+            if (! mediaStorageDir.exists()){
+                if (! mediaStorageDir.mkdirs()){
+                    Log.d(TAG, "failed to create directory");
+                    return null;
+                }
+            }
+
+            // Create a media file name
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            File mediaFile;
+            if (type == MEDIA_TYPE_IMAGE){
+                mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                        "IMG_"+ timeStamp + ".jpg");
+            } else if(type == MEDIA_TYPE_VIDEO) {
+                mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                        "VID_"+ timeStamp + ".mp4");
+            } else {
+                return null;
+            }
+
+            return mediaFile;
         }
 
     }
