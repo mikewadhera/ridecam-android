@@ -1,0 +1,39 @@
+Scenario:
+
+User starts app, begins recording but then backgrounds with power button.
+Later resumes app and stops recording.
+
+Desired result: Continuous live preview and recording.
+
+OS requirement: Kitkat 4.4+ (API 19)
+
+
+          t0            startRec()     pb()     resume()     stopRec()    pb()
+
+          init                                                                kill
+APP       ========================================================================
+
+            onCreate()          onDestroy()        onCreate()       onDestroy()
+ACTIVITY    ===============================        ============================
+
+
+              onCreate()                                              onDestroy()
+                startForeground()
+SERVICE       ===================================================================
++r
+
+APP            addView()                                            removeView()
+WINDOW         =================================================================
++r
+
+
+Notes:
+r - retained as application reference
+Window does not *need* to be floating, just separate from any activity's lifecycle
+
+
+Links
+-----
+http://stackoverflow.com/questions/24240594/how-can-i-create-a-windowmanager-which-only-shows-in-my-application
+http://icetea09.com/blog/2015/03/16/android-floating-view-like-facebook-chatheads/
+http://stackoverflow.com/questions/27533985/remove-floating-button-from-windowmanager-when-power-key-pressed
