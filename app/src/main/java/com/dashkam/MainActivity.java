@@ -332,7 +332,8 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "CameraService onStartCommand");
 
             if (intent == null) {
-                throw new UnsupportedOperationException("Cannot start service with null intent");
+                Log.e(TAG, "Cannot start service with null intent");
+                return START_STICKY;
             }
 
             switch (intent.getIntExtra(START_SERVICE_COMMAND, COMMAND_NONE)) {
@@ -349,7 +350,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
 
                 default:
-                    throw new UnsupportedOperationException("Cannot start service with illegal commands");
+                    Log.e(TAG, "Cannot start service with illegal commands");
             }
 
             return START_STICKY;
