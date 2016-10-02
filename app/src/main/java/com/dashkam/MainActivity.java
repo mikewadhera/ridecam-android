@@ -295,6 +295,8 @@ public class MainActivity extends AppCompatActivity {
                         mCamera = Camera.open(cameraId);
                         setCameraDisplayOrientation(cameraId, mCamera);
                         Camera.Parameters params = mCamera.getParameters();
+                        params.setPreviewSize(1280, 720);
+                        params.setPreviewFpsRange(24000, 24000);
                         params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                         mCamera.setParameters(params);
                         mCamera.setPreviewTexture(sCachedSurfaceTexture);
@@ -396,13 +398,16 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Setting Camera");
                 mMediaRecorder.setCamera(camera);
 
+                Log.d(TAG, "R: Setting Camera orientation hint");
+                mMediaRecorder.setOrientationHint(90);
+
                 Log.d(TAG, "R: Setting sources");
                 //mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
                 mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
                 Log.d(TAG, "R: Setting profile");
                 mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                mMediaRecorder.setVideoSize(1920, 1080);
+                mMediaRecorder.setVideoSize(1280, 720);
                 mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
 
                 Log.d(TAG, "R: Setting output file");
@@ -509,6 +514,7 @@ public class MainActivity extends AppCompatActivity {
             } else {  // back-facing
                 result = (info.orientation - degrees + 360) % 360;
             }
+            Log.d(TAG, "Adjusting preview orientation degrees: " + String.valueOf(result));
             camera.setDisplayOrientation(result);
         }
 
