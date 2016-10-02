@@ -1,11 +1,14 @@
 package com.dashkam;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -16,7 +19,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Surface;
-import android.view.SurfaceHolder;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
@@ -28,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
+import static com.dashkam.MainActivity.CameraService.isRecording;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,14 +55,7 @@ public class MainActivity extends AppCompatActivity {
         view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if (hasPermissions()) {
-                    Intent intent = new Intent(MainActivity.this, CameraService.class);
-                    intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_RECORD);
-                    startService(intent);
-                    return true;
-                } else {
-                    return false;
-                }
+                return toggleRecording();
             }
         });
 
@@ -91,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
                     textureView.setSurfaceTexture(sCachedSurfaceTexture);
                 }
                 startService(intent);
+                render();
 
             } else {
 
@@ -99,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
                         sCachedSurfaceTexture = surfaceTexture;
                         startService(intent);
+                        render();
                     }
 
                     @Override
@@ -131,15 +129,30 @@ public class MainActivity extends AppCompatActivity {
         startService(intent);
     }
 
-    @Override
-    public void onDestroy() {
-        Log.d(TAG, "onDestroy");
-        super.onDestroy();
+    public boolean toggleRecording() {
+        if (hasPermissions()) {
+            Intent intent = new Intent(MainActivity.this, CameraService.class);
+            intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_RECORD);
+            startService(intent);
+            render();
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-        // Shutting down activity, either by system or from pressing power button
+    public void render() {
+        View previewView = findViewById(R.id.camera_preview);
+        Drawable previewViewBackground;
 
-        // The service is built for main activity to come and go as it pleases
-        // so the service doesn't care to know about a destroy state
+        if (CameraService.isRecording()) {
+            previewViewBackground = getResources().getDrawable(R.drawable.record_frame_on);
+        } else {
+            previewViewBackground = getResources().getDrawable(R.drawable.record_frame);
+        }
+
+        // Doesn't work
+        //previewView.setBackgroundDrawable(previewViewBackground);
     }
 
     public boolean hasPermissions() {
@@ -196,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
         private static final String TAG = "CameraService";
 
-        public static final String RESULT_RECEIVER = "resultReceiver";
+        private static final int NOTIFICATION_ID = 1;
 
         private static final String START_SERVICE_COMMAND = "startServiceCommands";
         private static final int COMMAND_NONE = -1;
@@ -206,13 +219,15 @@ public class MainActivity extends AppCompatActivity {
 
         public static boolean sRunningLock;
         private boolean mAcquiringCameraLock;
-        private boolean mRecordingLock;
+        private static boolean sRecordingLock;
         private Camera mCamera;
         private MediaRecorder mMediaRecorder;
 
         public static boolean hasStarted() {
             return sRunningLock;
         }
+
+        public static boolean isRecording() { return sRecordingLock; }
 
         public CameraService() {
         }
@@ -222,8 +237,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onCreate");
 
             // Called after we've acquired all permissions required
-
-            // TODO: Add startForeground()
+            showForegroundNotification("Not Recording");
 
             sRunningLock = true;
         }
@@ -235,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
             // By design this should not be called much / only when app is killed
 
             try {
-                if (mRecordingLock) {
+                if (sRecordingLock) {
                     // This is VERY bad
                     // We should *never* have the service
                     // shutdown while a recording is in progress
@@ -256,17 +270,15 @@ public class MainActivity extends AppCompatActivity {
         // Activity state transitions
 
         public void handleOnResume() {
-            if (!mRecordingLock) {
+            if (!sRecordingLock) {
                 acquireCamera();
             }
-
         }
 
         public void handleOnStop() {
-            if (!mRecordingLock) {
+            if (!sRecordingLock) {
                 releaseCamera();
             }
-
         }
 
         public void acquireCamera() {
@@ -319,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
 
         public void toggleRecording() {
             if (mCamera != null) {
-                if (mRecordingLock) {
+                if (sRecordingLock) {
                     stopRecording();
                 } else {
                     startRecording();
@@ -357,15 +369,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void startRecording() {
-            if (mRecordingLock) {
+            if (sRecordingLock) {
                 flash("Recording Failed: Already in progress");
                 return;
             }
 
-            mRecordingLock = true;
+            sRecordingLock = true;
 
             try {
-                // TODO: update startForeground()
+                showForegroundNotification("Recording");
 
                 mMediaRecorder = new MediaRecorder();
 
@@ -374,7 +386,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (camera == null) {
                     flash("Recording Failed: No Camera");
-                    mRecordingLock = false;
+                    sRecordingLock = false;
                     return;
                 }
 
@@ -402,12 +414,12 @@ public class MainActivity extends AppCompatActivity {
                 } catch (IllegalStateException e) {
                     Log.d(TAG, "IllegalStateException when preparing MediaRecorder: " + e.getMessage());
                     flash("Recording Failed: Internal Error");
-                    mRecordingLock = false;
+                    sRecordingLock = false;
                     return;
                 } catch (IOException e) {
                     Log.d(TAG, "IOException when preparing MediaRecorder: " + e.getMessage());
                     flash("Recording Failed: Internal Error");
-                    mRecordingLock = false;
+                    sRecordingLock = false;
                     return;
                 }
 
@@ -419,12 +431,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Started");
             } catch (Exception e) {
                 e.printStackTrace();
-                mRecordingLock = false;
+                sRecordingLock = false;
             }
         }
 
         public void stopRecording() {
-            if (!mRecordingLock) {
+            if (!sRecordingLock) {
                 flash("Stop Failed: Not Recording");
                 return;
             }
@@ -436,14 +448,37 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Releasing recorder");
                 mMediaRecorder.release();
 
-                // TODO: update stopForeground()
+                showForegroundNotification("Not Recording");
             } finally {
-                mRecordingLock = false;
+                sRecordingLock = false;
             }
 
             flash("Recording Stopped");
 
             Log.d(TAG, "R: Stopped");
+        }
+
+        private void showForegroundNotification(String contentText) {
+            // Create intent that will bring our app to the front, as if it was tapped in the app
+            // launcher
+            Intent showTaskIntent = new Intent(getApplicationContext(), MainActivity.class);
+            showTaskIntent.setAction(Intent.ACTION_MAIN);
+            showTaskIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            showTaskIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                    getApplicationContext(),
+                    0,
+                    showTaskIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+
+            Notification notification = new Notification.Builder(getApplicationContext())
+                    .setContentTitle(getString(R.string.app_name))
+                    .setContentText(contentText)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(contentIntent)
+                    .build();
+            startForeground(NOTIFICATION_ID, notification);
         }
 
         private void flash(String text) {
