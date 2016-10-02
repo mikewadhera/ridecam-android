@@ -26,7 +26,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".MainActivity$RecordService"
+            android:name=".MainActivity$CameraService"
             android:exported="false"/>
     </application>
 
