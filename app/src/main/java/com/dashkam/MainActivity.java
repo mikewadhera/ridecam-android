@@ -13,9 +13,11 @@ import android.hardware.Camera;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Surface;
@@ -51,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.fragment_camera);
 
-        View view = findViewById(R.id.camera_preview);
+        View view = findViewById(R.id.record_frame);
         view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
@@ -133,8 +135,13 @@ public class MainActivity extends AppCompatActivity {
         if (hasPermissions()) {
             Intent intent = new Intent(MainActivity.this, CameraService.class);
             intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_RECORD);
+            intent.putExtra(CameraService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+                @Override
+                protected void onReceiveResult(int code, Bundle data) {
+                    render();
+                }
+            });
             startService(intent);
-            render();
             return true;
         } else {
             return false;
@@ -142,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void render() {
-        View previewView = findViewById(R.id.camera_preview);
+        View previewView = findViewById(R.id.record_frame);
         Drawable previewViewBackground;
 
         if (CameraService.isRecording()) {
@@ -151,8 +158,7 @@ public class MainActivity extends AppCompatActivity {
             previewViewBackground = getResources().getDrawable(R.drawable.record_frame);
         }
 
-        // Doesn't work
-        //previewView.setBackgroundDrawable(previewViewBackground);
+        previewView.setBackgroundDrawable(previewViewBackground);
     }
 
     public boolean hasPermissions() {
@@ -217,15 +223,12 @@ public class MainActivity extends AppCompatActivity {
         private static final int COMMAND_ACTIVITY_ONSTOP = 1;
         private static final int COMMAND_ACTIVITY_RECORD = 2;
 
-        public static boolean sRunningLock;
+        public static final String RESULT_RECEIVER = "resultReceiver";
+
         private boolean mAcquiringCameraLock;
         private static boolean sRecordingLock;
         private Camera mCamera;
         private MediaRecorder mMediaRecorder;
-
-        public static boolean hasStarted() {
-            return sRunningLock;
-        }
 
         public static boolean isRecording() { return sRecordingLock; }
 
@@ -238,8 +241,6 @@ public class MainActivity extends AppCompatActivity {
 
             // Called after we've acquired all permissions required
             showForegroundNotification("Not Recording");
-
-            sRunningLock = true;
         }
 
         @Override
@@ -257,8 +258,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 releaseCamera();
-            } finally {
-                sRunningLock = false;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -361,6 +362,8 @@ public class MainActivity extends AppCompatActivity {
 
                 case COMMAND_ACTIVITY_RECORD:
                     toggleRecording();
+                    ResultReceiver receiver = intent.getParcelableExtra(RESULT_RECEIVER);
+                    receiver.send(0, null);
                     break;
 
                 default:
