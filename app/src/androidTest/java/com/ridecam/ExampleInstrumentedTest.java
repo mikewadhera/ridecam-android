@@ -1,4 +1,4 @@
-package com.dashkam;
+package com.ridecam;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

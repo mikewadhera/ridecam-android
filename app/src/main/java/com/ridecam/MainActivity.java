@@ -1,4 +1,4 @@
-package com.dashkam;
+package com.ridecam;
 
 import android.Manifest;
 import android.app.Notification;
@@ -32,7 +32,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
-import static com.dashkam.MainActivity.CameraService.isRecording;
 
 public class MainActivity extends AppCompatActivity {
 

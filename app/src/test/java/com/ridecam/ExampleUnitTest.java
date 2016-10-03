@@ -1,4 +1,4 @@
-package com.dashkam;
+package com.ridecam;
 
 import org.junit.Test;
 
