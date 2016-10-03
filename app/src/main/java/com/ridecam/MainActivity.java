@@ -262,6 +262,16 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        public void onCameraError(int errorType) {
+            Log.e(TAG, "!!!!!!! onCameraError errorType: " + errorType);
+            // TODO add logging
+        }
+
+        public void onRecorderError(int errorType, int errorCode) {
+            Log.e(TAG, "!!!!!!! onRecorderError errorType: " + errorType + " errorCode: " + errorCode);
+            // TODO add logging
+        }
+
         @Override
         public IBinder onBind(Intent intent) {
             return null;
@@ -293,6 +303,12 @@ public class MainActivity extends AppCompatActivity {
 
                         int cameraId = 0;
                         mCamera = Camera.open(cameraId);
+                        mCamera.setErrorCallback(new Camera.ErrorCallback() {
+                            @Override
+                            public void onError(int errorType, Camera camera) {
+                                onCameraError(errorType);
+                            }
+                        });
                         setCameraDisplayOrientation(cameraId, mCamera);
                         Camera.Parameters params = mCamera.getParameters();
                         params.setPreviewSize(1280, 720);
@@ -308,6 +324,7 @@ public class MainActivity extends AppCompatActivity {
                         // In practice we should never acquire the camera before we
                         // cache a surface texture as we start service
                         // from onSurfaceTextureAvailable
+                        // TODO add logging
 
                     }
                 } catch (Exception e) {
@@ -384,6 +401,13 @@ public class MainActivity extends AppCompatActivity {
                 showForegroundNotification("Recording");
 
                 mMediaRecorder = new MediaRecorder();
+
+                mMediaRecorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
+                    @Override
+                    public void onError(MediaRecorder mediaRecorder, int errorType, int errorCode) {
+                        onRecorderError(errorType, errorCode);
+                    }
+                });
 
                 Log.d(TAG, "R: Obtaining Camera");
                 Camera camera = mCamera;
