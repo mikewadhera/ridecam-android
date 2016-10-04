@@ -85,7 +85,13 @@ public class MainActivity extends AppCompatActivity {
             if (sCachedSurfaceTexture != null) {
 
                 if (textureView.getSurfaceTexture() != sCachedSurfaceTexture) {
-                    textureView.setSurfaceTexture(sCachedSurfaceTexture);
+                    try {
+                        textureView.setSurfaceTexture(sCachedSurfaceTexture);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // TODO add logging
+                    }
+
                 }
                 startService(intent);
                 render();
