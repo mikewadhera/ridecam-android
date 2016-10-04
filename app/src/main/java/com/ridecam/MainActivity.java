@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     public static SurfaceTexture sCachedSurfaceTexture;
+    public static TextureView.SurfaceTextureListener sTextureViewListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,18 +51,10 @@ public class MainActivity extends AppCompatActivity {
         // Not to mention there is nothing interesting the service
         // would be interested about at this point
 
-        setContentView(R.layout.fragment_camera);
-
-        View view = findViewById(R.id.record_frame);
-        view.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                return toggleRecording();
-            }
-        });
-
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        loadLayout();
     }
 
     @Override
@@ -77,12 +70,43 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
 
-            TextureView textureView = (TextureView) findViewById(R.id.camera_preview);
+            if (sCachedSurfaceTexture == null) {
 
-            final Intent intent = new Intent(this, CameraService.class);
-            intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
+                // Important: we reload layout to make sure onSurfaceTextureAvailable()
+                // is called back when resuming from permissions dialog
+                loadLayout();
 
-            if (sCachedSurfaceTexture != null) {
+                TextureView textureView = (TextureView) findViewById(R.id.camera_preview);
+
+                sTextureViewListener = new TextureView.SurfaceTextureListener() {
+                    @Override
+                    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+                        sCachedSurfaceTexture = surfaceTexture;
+                        Intent intent = new Intent(MainActivity.this, CameraService.class);
+                        intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
+                        startService(intent);
+                        render();
+                    }
+
+                    @Override
+                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+                        // return "false" so that TextureView does not release cached SurfaceTexture
+                        return (surfaceTexture != MainActivity.sCachedSurfaceTexture);
+                    }
+
+                    @Override
+                    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {}
+
+                    @Override
+                    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {}
+                };
+                textureView.setSurfaceTextureListener(sTextureViewListener);
+
+            } else {
+
+                TextureView textureView = (TextureView) findViewById(R.id.camera_preview);
+
+                textureView.setSurfaceTextureListener(sTextureViewListener);
 
                 if (textureView.getSurfaceTexture() != sCachedSurfaceTexture) {
                     try {
@@ -93,31 +117,10 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 }
+                Intent intent = new Intent(this, CameraService.class);
+                intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
                 startService(intent);
                 render();
-
-            } else {
-
-                textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-                    @Override
-                    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-                        sCachedSurfaceTexture = surfaceTexture;
-                        startService(intent);
-                        render();
-                    }
-
-                    @Override
-                    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {}
-
-                    @Override
-                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-                        // "false" so that TextureView will not release SurfaceTexture we cache
-                        return false;
-                    }
-
-                    @Override
-                    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {}
-                });
 
             }
 
@@ -134,6 +137,25 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, CameraService.class);
         intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONSTOP);
         startService(intent);
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "onDestroy");
+        super.onDestroy();
+
+    }
+
+    public void loadLayout() {
+        setContentView(R.layout.fragment_camera);
+
+        View view = findViewById(R.id.record_frame);
+        view.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                return toggleRecording();
+            }
+        });
     }
 
     public boolean toggleRecording() {
