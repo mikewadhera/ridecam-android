@@ -202,7 +202,7 @@ public class SamsungCamera implements CameraEngine<Object> {
         return null;
     }
 
-    public Class<?> klass() throws ClassNotFoundException {
+    public static Class<?> klass() throws ClassNotFoundException {
         return Class.forName("com.sec.android.seccamera.SecCamera");
     }
 

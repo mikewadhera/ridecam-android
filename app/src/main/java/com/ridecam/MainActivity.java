@@ -29,6 +29,7 @@ import com.ridecam.av.OSCamera;
 import com.ridecam.av.OSRecorder;
 import com.ridecam.av.RecorderEngine;
 import com.ridecam.av.vendor.SamsungCamera;
+import com.ridecam.av.vendor.SamsungRecorder;
 
 import java.io.File;
 import java.io.IOException;
@@ -432,7 +433,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 showForegroundNotification("Recording");
 
-                mRecorder = new OSRecorder();
+                mRecorder = new SamsungRecorder();
 
                 mRecorder.setOnErrorListener(new RecorderEngine.OnErrorListener() {
                     @Override

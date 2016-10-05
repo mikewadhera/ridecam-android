@@ -17,6 +17,7 @@
         android:theme="@style/AppTheme">
 
         <uses-library android:name="seccamera" android:required="false"></uses-library>
+        <uses-library android:name="secmediarecorder" android:required="false"></uses-library>
 
         <activity
             android:name="com.ridecam.MainActivity"
