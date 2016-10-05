@@ -257,6 +257,8 @@ public class MainActivity extends AppCompatActivity {
 
         public static final String RESULT_RECEIVER = "resultReceiver";
 
+        private static final boolean FORCE_NATIVE_CAMERA = false;
+
         private boolean mAcquiringCameraLock;
         private static boolean sRecordingLock;
         private CameraEngine mCamera;
@@ -334,8 +336,12 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     if (sCachedSurfaceTexture != null) {
 
-                        int cameraId = 0;
-                        mCamera = SamsungCamera.open();
+                        if (shouldUseSamsung()) {
+                            mCamera = SamsungCamera.open();
+                        } else {
+                            mCamera = OSCamera.open();
+                        }
+
                         mCamera.setErrorCallback(new CameraEngine.ErrorCallback() {
                             @Override
                             public void onError(int errorType, CameraEngine camera) {
@@ -433,7 +439,11 @@ public class MainActivity extends AppCompatActivity {
             try {
                 showForegroundNotification("Recording");
 
-                mRecorder = new SamsungRecorder();
+                if (shouldUseSamsung()) {
+                    mRecorder = new SamsungRecorder();
+                } else {
+                    mRecorder = new OSRecorder();
+                }
 
                 mRecorder.setOnErrorListener(new RecorderEngine.OnErrorListener() {
                     @Override
@@ -520,6 +530,10 @@ public class MainActivity extends AppCompatActivity {
             flash("Recording Stopped");
 
             Log.d(TAG, "R: Stopped");
+        }
+
+        private boolean shouldUseSamsung() {
+            return (SamsungCamera.isAvailable() && !FORCE_NATIVE_CAMERA);
         }
 
         private void showForegroundNotification(String contentText) {

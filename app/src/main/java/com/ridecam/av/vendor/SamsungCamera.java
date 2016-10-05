@@ -14,6 +14,15 @@ public class SamsungCamera implements CameraEngine<Object> {
 
     private Object mCamera; // com.sec.android.seccamera.SecCamera
 
+    public static boolean isAvailable() {
+        try {
+            Class.forName("com.sec.android.seccamera.SecCamera");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     public static CameraEngine open() {
         try {
             Class<?> secCamera = Class.forName("com.sec.android.seccamera.SecCamera");
@@ -25,7 +34,6 @@ public class SamsungCamera implements CameraEngine<Object> {
         }
         return null;
     }
-
 
     public SamsungCamera(Object camera) {
         mCamera = camera;
