@@ -15,6 +15,9 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <uses-library android:name="seccamera" android:required="false"></uses-library>
+
         <activity
             android:name="com.ridecam.MainActivity"
             android:label="@string/app_name"

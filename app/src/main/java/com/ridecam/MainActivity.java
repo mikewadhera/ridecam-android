@@ -28,6 +28,7 @@ import com.ridecam.av.CameraEngine;
 import com.ridecam.av.OSCamera;
 import com.ridecam.av.OSRecorder;
 import com.ridecam.av.RecorderEngine;
+import com.ridecam.av.vendor.SamsungCamera;
 
 import java.io.File;
 import java.io.IOException;
@@ -333,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
                     if (sCachedSurfaceTexture != null) {
 
                         int cameraId = 0;
-                        mCamera = OSCamera.open();
+                        mCamera = SamsungCamera.open();
                         mCamera.setErrorCallback(new CameraEngine.ErrorCallback() {
                             @Override
                             public void onError(int errorType, CameraEngine camera) {

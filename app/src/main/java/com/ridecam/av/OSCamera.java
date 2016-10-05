@@ -2,7 +2,6 @@ package com.ridecam.av;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.Camera.CameraInfo;
 
 import java.io.IOException;
 
