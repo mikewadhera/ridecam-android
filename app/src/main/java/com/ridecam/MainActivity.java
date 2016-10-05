@@ -9,8 +9,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
-import android.hardware.Camera;
-import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -25,6 +23,11 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import com.ridecam.av.CameraEngine;
+import com.ridecam.av.OSCamera;
+import com.ridecam.av.OSRecorder;
+import com.ridecam.av.RecorderEngine;
 
 import java.io.File;
 import java.io.IOException;
@@ -254,8 +257,8 @@ public class MainActivity extends AppCompatActivity {
 
         private boolean mAcquiringCameraLock;
         private static boolean sRecordingLock;
-        private Camera mCamera;
-        private MediaRecorder mMediaRecorder;
+        private CameraEngine mCamera;
+        private RecorderEngine mRecorder;
 
         public static boolean isRecording() { return sRecordingLock; }
 
@@ -330,18 +333,18 @@ public class MainActivity extends AppCompatActivity {
                     if (sCachedSurfaceTexture != null) {
 
                         int cameraId = 0;
-                        mCamera = Camera.open(cameraId);
-                        mCamera.setErrorCallback(new Camera.ErrorCallback() {
+                        mCamera = OSCamera.open();
+                        mCamera.setErrorCallback(new CameraEngine.ErrorCallback() {
                             @Override
-                            public void onError(int errorType, Camera camera) {
+                            public void onError(int errorType, CameraEngine camera) {
                                 onCameraError(errorType);
                             }
                         });
-                        setCameraDisplayOrientation(cameraId, mCamera);
-                        Camera.Parameters params = mCamera.getParameters();
+                        setCameraDisplayOrientation(mCamera);
+                        CameraEngine.Parameters params = mCamera.getParameters();
                         params.setPreviewSize(1280, 720);
                         params.setPreviewFpsRange(24000, 24000);
-                        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                        params.setFocusMode(CameraEngine.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                         mCamera.setParameters(params);
                         mCamera.setPreviewTexture(sCachedSurfaceTexture);
                         mCamera.startPreview();
@@ -428,17 +431,17 @@ public class MainActivity extends AppCompatActivity {
             try {
                 showForegroundNotification("Recording");
 
-                mMediaRecorder = new MediaRecorder();
+                mRecorder = new OSRecorder();
 
-                mMediaRecorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
+                mRecorder.setOnErrorListener(new RecorderEngine.OnErrorListener() {
                     @Override
-                    public void onError(MediaRecorder mediaRecorder, int errorType, int errorCode) {
+                    public void onError(RecorderEngine recorder, int errorType, int errorCode) {
                         onRecorderError(errorType, errorCode);
                     }
                 });
 
                 Log.d(TAG, "R: Obtaining Camera");
-                Camera camera = mCamera;
+                CameraEngine camera = mCamera;
 
                 if (camera == null) {
                     flash("Recording Failed: No Camera");
@@ -450,26 +453,26 @@ public class MainActivity extends AppCompatActivity {
                 camera.unlock();
 
                 Log.d(TAG, "R: Setting Camera");
-                mMediaRecorder.setCamera(camera);
+                mRecorder.setCamera(camera);
 
                 Log.d(TAG, "R: Setting Camera orientation hint");
-                mMediaRecorder.setOrientationHint(90);
+                mRecorder.setOrientationHint(90);
 
                 Log.d(TAG, "R: Setting sources");
                 //mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-                mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+                mRecorder.setVideoSource(OSRecorder.VideoSource.CAMERA);
 
                 Log.d(TAG, "R: Setting profile");
-                mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                mMediaRecorder.setVideoSize(1280, 720);
-                mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
+                mRecorder.setOutputFormat(OSRecorder.OutputFormat.MPEG_4);
+                mRecorder.setVideoSize(1280, 720);
+                mRecorder.setVideoEncoder(OSRecorder.VideoEncoder.H264);
 
                 Log.d(TAG, "R: Setting output file");
-                mMediaRecorder.setOutputFile(getOutputMediaFilePath(MEDIA_TYPE_VIDEO));
+                mRecorder.setOutputFile(getOutputMediaFilePath(MEDIA_TYPE_VIDEO));
 
                 Log.d(TAG, "R: Prepare");
                 try {
-                    mMediaRecorder.prepare();
+                    mRecorder.prepare();
                 } catch (IllegalStateException e) {
                     Log.d(TAG, "IllegalStateException when preparing MediaRecorder: " + e.getMessage());
                     flash("Recording Failed: Internal Error");
@@ -483,7 +486,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 Log.d(TAG, "R: Start");
-                mMediaRecorder.start();
+                mRecorder.start();
 
                 flash("Recording Started");
 
@@ -502,10 +505,10 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 Log.d(TAG, "R: Stopping");
-                mMediaRecorder.stop();
+                mRecorder.stop();
 
                 Log.d(TAG, "R: Releasing recorder");
-                mMediaRecorder.release();
+                mRecorder.release();
 
                 showForegroundNotification("Not Recording");
             } finally {
@@ -548,10 +551,7 @@ public class MainActivity extends AppCompatActivity {
             return (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         }
 
-        public void setCameraDisplayOrientation(int cameraId, android.hardware.Camera camera) {
-            android.hardware.Camera.CameraInfo info =
-                    new android.hardware.Camera.CameraInfo();
-            android.hardware.Camera.getCameraInfo(cameraId, info);
+        public void setCameraDisplayOrientation(CameraEngine camera) {
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             int degrees = 0;
             switch (rotation) {
@@ -560,14 +560,9 @@ public class MainActivity extends AppCompatActivity {
                 case Surface.ROTATION_180: degrees = 180; break;
                 case Surface.ROTATION_270: degrees = 270; break;
             }
-
             int result;
-            if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                result = (info.orientation + degrees) % 360;
-                result = (360 - result) % 360;  // compensate the mirror
-            } else {  // back-facing
-                result = (info.orientation - degrees + 360) % 360;
-            }
+            CameraEngine.CameraInfo info = camera.getCameraInfo();
+            result = (info.getOrientation() - degrees + 360) % 360;
             Log.d(TAG, "Adjusting preview orientation degrees: " + String.valueOf(result));
             camera.setDisplayOrientation(result);
         }
