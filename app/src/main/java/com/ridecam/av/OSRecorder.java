@@ -35,10 +35,6 @@ public class OSRecorder implements RecorderEngine {
         // no-op
     }
 
-    public void setPreviewDisplay(Surface surface) {
-        mRecorder.setPreviewDisplay(surface);
-    }
-
     public void setOrientationHint(int orientationHint) {
         mRecorder.setOrientationHint(orientationHint);
     }

@@ -7,9 +7,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
@@ -23,7 +21,6 @@ import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Surface;
-import android.view.SurfaceHolder;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
@@ -291,7 +288,6 @@ public class MainActivity extends AppCompatActivity {
         private static boolean sRecordingLock;
         private CameraEngine mCamera;
         private RecorderEngine mRecorder;
-        private SurfaceHolder mSurfaceHolder;
 
         public static boolean isRecording() { return sRecordingLock; }
 
@@ -384,76 +380,7 @@ public class MainActivity extends AppCompatActivity {
                         params.setFocusMode(CameraEngine.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                         mCamera.setParameters(params);
 
-                        final Surface surface = new Surface(sCachedSurfaceTexture);
-                        mSurfaceHolder = new SurfaceHolder() {
-                            @Override
-                            public void addCallback(Callback callback) {
-
-                            }
-
-                            @Override
-                            public void removeCallback(Callback callback) {
-
-                            }
-
-                            @Override
-                            public boolean isCreating() {
-                                return false;
-                            }
-
-                            @Override
-                            public void setType(int i) {
-
-                            }
-
-                            @Override
-                            public void setFixedSize(int i, int i1) {
-
-                            }
-
-                            @Override
-                            public void setSizeFromLayout() {
-
-                            }
-
-                            @Override
-                            public void setFormat(int i) {
-
-                            }
-
-                            @Override
-                            public void setKeepScreenOn(boolean b) {
-
-                            }
-
-                            @Override
-                            public Canvas lockCanvas() {
-                                return null;
-                            }
-
-                            @Override
-                            public Canvas lockCanvas(Rect rect) {
-                                return null;
-                            }
-
-                            @Override
-                            public void unlockCanvasAndPost(Canvas canvas) {
-
-                            }
-
-                            @Override
-                            public Rect getSurfaceFrame() {
-                                return null;
-                            }
-
-                            @Override
-                            public Surface getSurface() {
-                                return surface;
-                            }
-                        };
-
-                        mCamera.setPreviewDisplay(mSurfaceHolder);
-                        //mCamera.setPreviewTexture(sCachedSurfaceTexture);
+                        mCamera.setPreviewTexture(sCachedSurfaceTexture);
 
                         mCamera.startPreview();
 
@@ -566,9 +493,6 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.d(TAG, "R: Setting Camera");
                 mRecorder.setCamera(camera);
-
-                Log.d(TAG, "R: Setting preview display");
-                mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
                 Log.d(TAG, "R: Setting Camera orientation hint");
                 mRecorder.setOrientationHint(90);

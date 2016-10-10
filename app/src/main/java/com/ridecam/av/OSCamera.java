@@ -91,9 +91,6 @@ public class OSCamera implements CameraEngine<Camera> {
     public void setPreviewTexture(SurfaceTexture surfaceTexture) throws IOException {
         mCamera.setPreviewTexture(surfaceTexture);
     }
-    public void setPreviewDisplay(SurfaceHolder surfaceHolder) throws IOException {
-        mCamera.setPreviewDisplay(surfaceHolder);
-    }
 
     public void setErrorCallback(final ErrorCallback errorCallback) {
         mCamera.setErrorCallback(new Camera.ErrorCallback() {

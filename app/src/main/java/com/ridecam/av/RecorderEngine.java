@@ -27,7 +27,6 @@ public interface RecorderEngine {
     public void setCamera(CameraEngine cameraEngine);
     public void setOrientationHint(int orientationHint);
     public void setVideoSource(int videoSource);
-    public void setPreviewDisplay(Surface surface);
     public void setAudioSource(int audioSource);
     public void setOutputFormat(int outputFormat);
     public void setVideoSize(int width, int height);

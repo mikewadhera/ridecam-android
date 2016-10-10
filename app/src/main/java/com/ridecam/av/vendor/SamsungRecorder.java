@@ -44,15 +44,6 @@ public class SamsungRecorder implements RecorderEngine {
         // which must be called *after* recording begins
     }
 
-    public void setPreviewDisplay(Surface surface) {
-        try {
-            Method setPreviewDisplayMethod = klass().getDeclaredMethod("setPreviewDisplay", Surface.class);
-            setPreviewDisplayMethod.invoke(mRecorder, surface);
-        } catch (Exception e) {
-            e.printStackTrace();
-        };
-    }
-
     public void registerRecordingSurface(CameraEngine camera) {
         try {
             Method setRecordingSurfaceMethod = klass().getDeclaredMethod("registerRecordingSurface", SamsungCamera.klass());

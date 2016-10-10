@@ -32,7 +32,6 @@ public interface CameraEngine<E> {
     public CameraEngine.Parameters getParameters();
     public void setParameters(CameraEngine.Parameters params);
     public void setPreviewTexture(SurfaceTexture surfaceTexture) throws IOException;
-    public void setPreviewDisplay(SurfaceHolder surfaceHolder) throws IOException;
     public void startPreview();
     public void stopPreview();
     public void release();
