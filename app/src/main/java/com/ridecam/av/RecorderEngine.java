@@ -1,6 +1,7 @@
 package com.ridecam.av;
 
 import android.media.MediaRecorder;
+import android.view.Surface;
 
 import java.io.IOException;
 
@@ -26,6 +27,7 @@ public interface RecorderEngine {
     public void setCamera(CameraEngine cameraEngine);
     public void setOrientationHint(int orientationHint);
     public void setVideoSource(int videoSource);
+    public void setPreviewDisplay(Surface surface);
     public void setAudioSource(int audioSource);
     public void setOutputFormat(int outputFormat);
     public void setVideoSize(int width, int height);
@@ -35,5 +37,8 @@ public interface RecorderEngine {
     public void start();
     public void stop();
     public void release();
+
+    // Non-standard API required by Samsung
+    public void registerRecordingSurface(CameraEngine camera);
 
 }

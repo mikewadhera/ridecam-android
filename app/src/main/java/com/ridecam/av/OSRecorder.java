@@ -2,6 +2,7 @@ package com.ridecam.av;
 
 import android.hardware.Camera;
 import android.media.MediaRecorder;
+import android.view.Surface;
 
 import java.io.IOException;
 
@@ -28,6 +29,14 @@ public class OSRecorder implements RecorderEngine {
 
     public void setCamera(CameraEngine cameraEngine) {
         mRecorder.setCamera((Camera)cameraEngine.getUnderlyingCamera());
+    }
+
+    public void registerRecordingSurface(CameraEngine camera) {
+        // no-op
+    }
+
+    public void setPreviewDisplay(Surface surface) {
+        mRecorder.setPreviewDisplay(surface);
     }
 
     public void setOrientationHint(int orientationHint) {

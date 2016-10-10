@@ -2,6 +2,7 @@ package com.ridecam.av;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.view.SurfaceHolder;
 
 import java.io.IOException;
 
@@ -89,6 +90,9 @@ public class OSCamera implements CameraEngine<Camera> {
 
     public void setPreviewTexture(SurfaceTexture surfaceTexture) throws IOException {
         mCamera.setPreviewTexture(surfaceTexture);
+    }
+    public void setPreviewDisplay(SurfaceHolder surfaceHolder) throws IOException {
+        mCamera.setPreviewDisplay(surfaceHolder);
     }
 
     public void setErrorCallback(final ErrorCallback errorCallback) {

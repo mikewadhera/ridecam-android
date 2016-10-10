@@ -1,5 +1,7 @@
 package com.ridecam.av.vendor;
 
+import android.view.Surface;
+
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
 
@@ -36,19 +38,36 @@ public class SamsungRecorder implements RecorderEngine {
     }
 
     public void setCamera(CameraEngine camera) {
+        // The samsung camera app doesn't actually call setCamera()
+        // when initializing recorder under dual cameras.
+        // Instead it uses a non-standard API called registerRecordingSurface()
+        // which must be called *after* recording begins
+    }
+
+    public void setPreviewDisplay(Surface surface) {
         try {
-            Method setParametersMethod = klass().getDeclaredMethod("setCamera", SamsungCamera.klass());
-            setParametersMethod.invoke(mRecorder, camera.getUnderlyingCamera());
+            Method setPreviewDisplayMethod = klass().getDeclaredMethod("setPreviewDisplay", Surface.class);
+            setPreviewDisplayMethod.invoke(mRecorder, surface);
         } catch (Exception e) {
             e.printStackTrace();
         };
+    }
+
+    public void registerRecordingSurface(CameraEngine camera) {
+        try {
+            Method setRecordingSurfaceMethod = klass().getDeclaredMethod("registerRecordingSurface", SamsungCamera.klass());
+            setRecordingSurfaceMethod.invoke(mRecorder, camera.getUnderlyingCamera());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void setVideoSource(int videoSource) {
         try {
             Method setVideoSourceMethod = klass().getDeclaredMethod("setVideoSource", Integer.TYPE);
             if (videoSource == VideoSource.CAMERA) {
-                setVideoSourceMethod.invoke(mRecorder, Utils.getFieldValue("com.sec.android.secmediarecorder.SecMediaRecorder$VideoSource.CAMERA"));
+                // TODO: We should see if we can map this value to a framework constant
+                setVideoSourceMethod.invoke(mRecorder, 2);
             } else {
                 setVideoSourceMethod.invoke(mRecorder, videoSource);
             }

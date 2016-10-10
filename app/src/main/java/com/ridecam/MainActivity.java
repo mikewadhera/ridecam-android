@@ -7,6 +7,10 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -19,6 +23,7 @@ import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Surface;
+import android.view.SurfaceHolder;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
@@ -87,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
                         sCachedSurfaceTexture = surfaceTexture;
+                        transformImage(i, i1);
                         Intent intent = new Intent(MainActivity.this, CameraService.class);
                         intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
                         startService(intent);
@@ -191,6 +197,28 @@ public class MainActivity extends AppCompatActivity {
         }
 
         previewView.setBackgroundDrawable(previewViewBackground);
+
+
+    }
+
+    private void transformImage(int width, int height) {
+        Matrix matrix = new Matrix();
+        int rotation = getWindowManager().getDefaultDisplay().getRotation();
+        RectF textureRectF = new RectF(0, 0, width, height);
+        RectF previewRectF = new RectF(0, 0, height, width);
+        float centerX = textureRectF.centerX();
+        float centerY = textureRectF.centerY();
+        //if(rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
+            previewRectF.offset(centerX - previewRectF.centerX(),
+                    centerY - previewRectF.centerY());
+            matrix.setRectToRect(textureRectF, previewRectF, Matrix.ScaleToFit.FILL);
+            float scale = Math.max((float)width / width,
+                    (float)height / height);
+            matrix.postScale(scale, scale, centerX, centerY);
+            matrix.postRotate(90, centerX, centerY);
+        //}
+        TextureView textureView = (TextureView) findViewById(R.id.camera_preview);
+        textureView.setTransform(matrix);
     }
 
     public boolean hasPermissions() {
@@ -263,6 +291,7 @@ public class MainActivity extends AppCompatActivity {
         private static boolean sRecordingLock;
         private CameraEngine mCamera;
         private RecorderEngine mRecorder;
+        private SurfaceHolder mSurfaceHolder;
 
         public static boolean isRecording() { return sRecordingLock; }
 
@@ -354,7 +383,78 @@ public class MainActivity extends AppCompatActivity {
                         params.setPreviewFpsRange(24000, 24000);
                         params.setFocusMode(CameraEngine.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                         mCamera.setParameters(params);
-                        mCamera.setPreviewTexture(sCachedSurfaceTexture);
+
+                        final Surface surface = new Surface(sCachedSurfaceTexture);
+                        mSurfaceHolder = new SurfaceHolder() {
+                            @Override
+                            public void addCallback(Callback callback) {
+
+                            }
+
+                            @Override
+                            public void removeCallback(Callback callback) {
+
+                            }
+
+                            @Override
+                            public boolean isCreating() {
+                                return false;
+                            }
+
+                            @Override
+                            public void setType(int i) {
+
+                            }
+
+                            @Override
+                            public void setFixedSize(int i, int i1) {
+
+                            }
+
+                            @Override
+                            public void setSizeFromLayout() {
+
+                            }
+
+                            @Override
+                            public void setFormat(int i) {
+
+                            }
+
+                            @Override
+                            public void setKeepScreenOn(boolean b) {
+
+                            }
+
+                            @Override
+                            public Canvas lockCanvas() {
+                                return null;
+                            }
+
+                            @Override
+                            public Canvas lockCanvas(Rect rect) {
+                                return null;
+                            }
+
+                            @Override
+                            public void unlockCanvasAndPost(Canvas canvas) {
+
+                            }
+
+                            @Override
+                            public Rect getSurfaceFrame() {
+                                return null;
+                            }
+
+                            @Override
+                            public Surface getSurface() {
+                                return surface;
+                            }
+                        };
+
+                        mCamera.setPreviewDisplay(mSurfaceHolder);
+                        //mCamera.setPreviewTexture(sCachedSurfaceTexture);
+
                         mCamera.startPreview();
 
                     } else {
@@ -467,6 +567,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Setting Camera");
                 mRecorder.setCamera(camera);
 
+                Log.d(TAG, "R: Setting preview display");
+                mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
+
                 Log.d(TAG, "R: Setting Camera orientation hint");
                 mRecorder.setOrientationHint(90);
 
@@ -501,6 +604,9 @@ public class MainActivity extends AppCompatActivity {
                 mRecorder.start();
 
                 flash("Recording Started");
+
+                Log.d(TAG, "R: Registering Recording Surface");
+                mRecorder.registerRecordingSurface(mCamera);
 
                 Log.d(TAG, "R: Started");
             } catch (Exception e) {
@@ -578,6 +684,7 @@ public class MainActivity extends AppCompatActivity {
             }
             int result;
             CameraEngine.CameraInfo info = camera.getCameraInfo();
+
             result = (info.getOrientation() - degrees + 360) % 360;
             Log.d(TAG, "Adjusting preview orientation degrees: " + String.valueOf(result));
             camera.setDisplayOrientation(result);

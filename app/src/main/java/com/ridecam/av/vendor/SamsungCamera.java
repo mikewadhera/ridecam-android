@@ -3,14 +3,16 @@ package com.ridecam.av.vendor;
 import com.ridecam.av.CameraEngine;
 
 import android.graphics.SurfaceTexture;
+import android.view.SurfaceHolder;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class SamsungCamera implements CameraEngine<Object> {
 
-    private static final int CAMERA_ID = 0;
+    private static final int CAMERA_ID = 10;
 
     private Object mCamera; // com.sec.android.seccamera.SecCamera
 
@@ -28,7 +30,9 @@ public class SamsungCamera implements CameraEngine<Object> {
             Class<?> secCamera = Class.forName("com.sec.android.seccamera.SecCamera");
             Method open = secCamera.getDeclaredMethod("open", Integer.TYPE);
             Object camera = open.invoke(null, CAMERA_ID);
-            return new SamsungCamera(camera);
+            SamsungCamera samsungCamera = new SamsungCamera(camera);
+            samsungCamera.enableDualEffect();
+            return samsungCamera;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -112,6 +116,19 @@ public class SamsungCamera implements CameraEngine<Object> {
 
     }
 
+    public void enableDualEffect() {
+        try {
+            Method setMode = klass().getDeclaredMethod("setShootingMode", Integer.TYPE);
+            setMode.invoke(mCamera, 47);
+            Method setDualEffect = klass().getDeclaredMethod("setSecImagingEffect", Integer.TYPE);
+            setDualEffect.invoke(mCamera, 208);
+            Method effectVisibleForRecordingMethod = klass().getDeclaredMethod("setSecImagingEffectVisibleForRecording", Boolean.TYPE);
+            effectVisibleForRecordingMethod.invoke(mCamera, true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setDisplayOrientation(int displayOrientation) {
         try {
             Method setDisplayOrientationMethod = klass().getDeclaredMethod("setDisplayOrientation", Integer.TYPE);
@@ -176,6 +193,15 @@ public class SamsungCamera implements CameraEngine<Object> {
         };
     }
 
+    public void setPreviewDisplay(SurfaceHolder surfaceHolder) throws IOException {
+        try {
+            Method setPreviewDisplayMethod = klass().getDeclaredMethod("setPreviewDisplay", SurfaceHolder.class);
+            setPreviewDisplayMethod.invoke(mCamera, surfaceHolder);
+        } catch (Exception e) {
+            e.printStackTrace();
+        };
+    }
+
     public void setErrorCallback(final ErrorCallback errorCallback) {
 //        mCamera.setErrorCallback(new Camera.ErrorCallback() {
 //            @Override
@@ -202,7 +228,7 @@ public class SamsungCamera implements CameraEngine<Object> {
         try {
             Object cameraInfo = CameraInfo.klass().newInstance();
             Method getCameraInfoMethod = klass().getDeclaredMethod("getCameraInfo", Integer.TYPE, CameraInfo.klass());
-            getCameraInfoMethod.invoke(null, CAMERA_ID, cameraInfo);
+            getCameraInfoMethod.invoke(null, 0, cameraInfo);
             return new SamsungCamera.CameraInfo(cameraInfo);
         } catch (Exception e) {
             e.printStackTrace();

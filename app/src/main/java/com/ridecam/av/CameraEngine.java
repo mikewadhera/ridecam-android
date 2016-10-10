@@ -1,6 +1,7 @@
 package com.ridecam.av;
 
 import android.graphics.SurfaceTexture;
+import android.view.SurfaceHolder;
 
 import java.io.IOException;
 
@@ -17,6 +18,8 @@ public interface CameraEngine<E> {
         public void setPreviewSize(int width, int height);
         public void setPreviewFpsRange(int minFps, int maxFps);
         public void setFocusMode(String value);
+        //public void setRecordingHint(boolean recordingHint);
+        //public void setPictureSize(int width, int height);
         public P getUnderlyingParameters();
     }
 
@@ -29,6 +32,7 @@ public interface CameraEngine<E> {
     public CameraEngine.Parameters getParameters();
     public void setParameters(CameraEngine.Parameters params);
     public void setPreviewTexture(SurfaceTexture surfaceTexture) throws IOException;
+    public void setPreviewDisplay(SurfaceHolder surfaceHolder) throws IOException;
     public void startPreview();
     public void stopPreview();
     public void release();
