@@ -1,14 +1,16 @@
 package com.ridecam.av.vendor;
 
-import com.ridecam.av.CameraEngine;
-
 import android.graphics.SurfaceTexture;
+import android.util.Log;
 import android.view.SurfaceHolder;
+
+import com.ridecam.av.CameraEngine;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import android.util.Pair;
 
 public class SamsungCamera implements CameraEngine<Object> {
 
@@ -121,9 +123,12 @@ public class SamsungCamera implements CameraEngine<Object> {
             Method setMode = klass().getDeclaredMethod("setShootingMode", Integer.TYPE);
             setMode.invoke(mCamera, 47);
             Method setDualEffect = klass().getDeclaredMethod("setSecImagingEffect", Integer.TYPE);
-            setDualEffect.invoke(mCamera, 208);
+            setDualEffect.invoke(mCamera, 200);
             Method effectVisibleForRecordingMethod = klass().getDeclaredMethod("setSecImagingEffectVisibleForRecording", Boolean.TYPE);
             effectVisibleForRecordingMethod.invoke(mCamera, true);
+            Pair<Integer, Integer> coordinates = Utils.coordinateSyncforDual(920, 1560, 480, 854);
+            Method effectCoordinatesMethod = klass().getDeclaredMethod("setDualEffectCoordinate", Integer.TYPE, Integer.TYPE);
+            effectCoordinatesMethod.invoke(mCamera, coordinates.first, coordinates.second);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -249,6 +254,13 @@ public class SamsungCamera implements CameraEngine<Object> {
             Class myClass = Class.forName(className);
             Field myField = myClass.getDeclaredField(fieldName);
             return myField.get(null);
+        }
+
+        public static Pair<Integer, Integer> coordinateSyncforDual(float arg8, float arg9, float arg10, float arg11) {
+            int v0 = (((int)arg9)) << 15 | (((int)arg8)) & 32767;
+            int v1 = (((int)(arg9 + arg11))) << 15 | (((int)(arg8 + arg10))) & 32767;
+            v0 |= -2147483648;
+            return new Pair<Integer, Integer>(new Integer(v0), new Integer(v1));
         }
 
     }
