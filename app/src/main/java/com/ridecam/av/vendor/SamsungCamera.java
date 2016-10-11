@@ -21,6 +21,7 @@ public class SamsungCamera implements CameraEngine<Object> {
     public static boolean isAvailable() {
         try {
             Class.forName("com.sec.android.seccamera.SecCamera");
+            // TODO also check /system/cameradata/camera-feature-v5.xml for CAMERA_DUALCAMERA (see FeatureLoader)
             return true;
         } catch (ClassNotFoundException e) {
             return false;

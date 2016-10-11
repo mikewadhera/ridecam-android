@@ -87,9 +87,9 @@ public class MainActivity extends AppCompatActivity {
 
                 sTextureViewListener = new TextureView.SurfaceTextureListener() {
                     @Override
-                    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+                    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int surfaceWidth, int surfaceHeight) {
                         sCachedSurfaceTexture = surfaceTexture;
-                        transformImage(i, i1);
+                        manuallyRotatePreviewIfNeeded(surfaceWidth, surfaceHeight);
                         Intent intent = new Intent(MainActivity.this, CameraService.class);
                         intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
                         startService(intent);
@@ -198,14 +198,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void transformImage(int width, int height) {
-        Matrix matrix = new Matrix();
-        int rotation = getWindowManager().getDefaultDisplay().getRotation();
-        RectF textureRectF = new RectF(0, 0, width, height);
-        RectF previewRectF = new RectF(0, 0, height, width);
-        float centerX = textureRectF.centerX();
-        float centerY = textureRectF.centerY();
-        //if(rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
+    private void manuallyRotatePreviewIfNeeded(int width, int height) {
+        if (CameraService.usingSamsungCameraEngine()) {
+            Matrix matrix = new Matrix();
+            int rotation = getWindowManager().getDefaultDisplay().getRotation();
+            RectF textureRectF = new RectF(0, 0, width, height);
+            RectF previewRectF = new RectF(0, 0, height, width);
+            float centerX = textureRectF.centerX();
+            float centerY = textureRectF.centerY();
+            //if(rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
             previewRectF.offset(centerX - previewRectF.centerX(),
                     centerY - previewRectF.centerY());
             matrix.setRectToRect(textureRectF, previewRectF, Matrix.ScaleToFit.FILL);
@@ -213,9 +214,10 @@ public class MainActivity extends AppCompatActivity {
                     (float)height / height);
             matrix.postScale(scale, scale, centerX, centerY);
             matrix.postRotate(90, centerX, centerY);
-        //}
-        TextureView textureView = (TextureView) findViewById(R.id.camera_preview);
-        textureView.setTransform(matrix);
+            //}
+            TextureView textureView = (TextureView) findViewById(R.id.camera_preview);
+            textureView.setTransform(matrix);
+        }
     }
 
     public boolean hasPermissions() {
@@ -351,6 +353,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        public static boolean usingSamsungCameraEngine() {
+            return (SamsungCamera.isAvailable() && !FORCE_NATIVE_CAMERA);
+        }
+
         public void acquireCamera() {
             if (mCamera == null && !mAcquiringCameraLock) {
 
@@ -361,7 +367,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     if (sCachedSurfaceTexture != null) {
 
-                        if (shouldUseSamsung()) {
+                        if (usingSamsungCameraEngine()) {
                             mCamera = SamsungCamera.open();
                         } else {
                             mCamera = OSCamera.open();
@@ -466,7 +472,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 showForegroundNotification("Recording");
 
-                if (shouldUseSamsung()) {
+                if (usingSamsungCameraEngine()) {
                     mRecorder = new SamsungRecorder();
                 } else {
                     mRecorder = new OSRecorder();
@@ -569,10 +575,6 @@ public class MainActivity extends AppCompatActivity {
             flash("Recording Stopped");
 
             Log.d(TAG, "R: Stopped");
-        }
-
-        private boolean shouldUseSamsung() {
-            return (SamsungCamera.isAvailable() && !FORCE_NATIVE_CAMERA);
         }
 
         private void showForegroundNotification(String contentText) {
