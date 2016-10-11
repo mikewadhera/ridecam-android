@@ -1,7 +1,5 @@
 package com.ridecam.av.vendor;
 
-import android.view.Surface;
-
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
 
@@ -110,6 +108,24 @@ public class SamsungRecorder implements RecorderEngine {
             } else {
                 setVideoEncoderMethod.invoke(mRecorder, videoEncoder);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setVideoFrameRate(int frameRate) {
+        try {
+            Method setVideoFrameRateMethod = klass().getDeclaredMethod("setVideoFrameRate", Integer.TYPE);
+            setVideoFrameRateMethod.invoke(mRecorder, frameRate);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setVideoEncodingBitRate(int bitRate) {
+        try {
+            Method setVideoEncodingBitRateMethod = klass().getDeclaredMethod("setVideoEncodingBitRate", Integer.TYPE);
+            setVideoEncodingBitRateMethod.invoke(mRecorder, bitRate);
         } catch (Exception e) {
             e.printStackTrace();
         }

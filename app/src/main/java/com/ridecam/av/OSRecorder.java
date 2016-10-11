@@ -75,6 +75,14 @@ public class OSRecorder implements RecorderEngine {
         }
     }
 
+    public void setVideoFrameRate(int frameRate) {
+        mRecorder.setVideoFrameRate(frameRate);
+    }
+
+    public void setVideoEncodingBitRate(int bitRate) {
+        mRecorder.setVideoEncodingBitRate(bitRate);
+    }
+
     public void setOutputFile(String path) {
         mRecorder.setOutputFile(path);
     }

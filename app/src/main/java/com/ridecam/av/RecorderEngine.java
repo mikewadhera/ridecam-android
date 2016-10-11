@@ -30,6 +30,8 @@ public interface RecorderEngine {
     public void setAudioSource(int audioSource);
     public void setOutputFormat(int outputFormat);
     public void setVideoSize(int width, int height);
+    public void setVideoFrameRate(int frameRate);
+    public void setVideoEncodingBitRate(int bitRate);
     public void setVideoEncoder(int videoEncoder);
     public void setOutputFile(String path);
     public void prepare() throws IllegalStateException, IOException;

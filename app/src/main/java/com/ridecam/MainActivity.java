@@ -510,6 +510,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Setting profile");
                 mRecorder.setOutputFormat(OSRecorder.OutputFormat.MPEG_4);
                 mRecorder.setVideoSize(1280, 720);
+                mRecorder.setVideoFrameRate(24);
+                mRecorder.setVideoEncodingBitRate(690000);
                 mRecorder.setVideoEncoder(OSRecorder.VideoEncoder.H264);
 
                 Log.d(TAG, "R: Setting output file");
