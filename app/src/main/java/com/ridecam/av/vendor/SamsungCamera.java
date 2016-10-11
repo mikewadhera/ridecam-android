@@ -127,7 +127,7 @@ public class SamsungCamera implements CameraEngine<Object> {
             setDualEffect.invoke(mCamera, 200);
             Method effectVisibleForRecordingMethod = klass().getDeclaredMethod("setSecImagingEffectVisibleForRecording", Boolean.TYPE);
             effectVisibleForRecordingMethod.invoke(mCamera, true);
-            Pair<Integer, Integer> coordinates = Utils.coordinateSyncforDual(920, 1560, 480, 854);
+            Pair<Integer, Integer> coordinates = Utils.coordinateSyncforDual(890, 1460, 480, 854);
             Method effectCoordinatesMethod = klass().getDeclaredMethod("setDualEffectCoordinate", Integer.TYPE, Integer.TYPE);
             effectCoordinatesMethod.invoke(mCamera, coordinates.first, coordinates.second);
         } catch (Exception e) {
