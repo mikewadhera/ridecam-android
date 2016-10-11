@@ -109,6 +109,10 @@ public class OSCamera implements CameraEngine<Camera> {
         mCamera.unlock();
     }
 
+    public void lock() {
+        mCamera.lock();
+    }
+
     public CameraInfo getCameraInfo() {
         android.hardware.Camera.CameraInfo info = new Camera.CameraInfo();
         android.hardware.Camera.getCameraInfo(CAMERA_ID, info);

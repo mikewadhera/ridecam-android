@@ -35,6 +35,10 @@ public class OSRecorder implements RecorderEngine {
         // no-op
     }
 
+    public void unregisterRecordingSurface(CameraEngine camera) {
+        // no-op
+    }
+
     public void setOrientationHint(int orientationHint) {
         mRecorder.setOrientationHint(orientationHint);
     }
@@ -85,6 +89,10 @@ public class OSRecorder implements RecorderEngine {
 
     public void stop() {
         mRecorder.stop();
+    }
+
+    public void reset() {
+        mRecorder.reset();
     }
 
     public void release() {

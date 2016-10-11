@@ -53,6 +53,15 @@ public class SamsungRecorder implements RecorderEngine {
         }
     }
 
+    public void unregisterRecordingSurface(CameraEngine camera) {
+        try {
+            Method unsetRecordingSurfaceMethod = klass().getDeclaredMethod("unregisterRecordingSurface", SamsungCamera.klass());
+            unsetRecordingSurfaceMethod.invoke(mRecorder, camera.getUnderlyingCamera());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setVideoSource(int videoSource) {
         try {
             Method setVideoSourceMethod = klass().getDeclaredMethod("setVideoSource", Integer.TYPE);
@@ -128,6 +137,15 @@ public class SamsungRecorder implements RecorderEngine {
         try {
             Method stopMethod = klass().getDeclaredMethod("stop");
             stopMethod.invoke(mRecorder);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void reset() {
+        try {
+            Method resetMethod = klass().getDeclaredMethod("reset");
+            resetMethod.invoke(mRecorder);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -229,6 +229,15 @@ public class SamsungCamera implements CameraEngine<Object> {
         }
     }
 
+    public void lock() {
+        try {
+            Method lockMethod = klass().getDeclaredMethod("lock");
+            lockMethod.invoke(mCamera);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public SamsungCamera.CameraInfo getCameraInfo() {
         try {
             Object cameraInfo = CameraInfo.klass().newInstance();

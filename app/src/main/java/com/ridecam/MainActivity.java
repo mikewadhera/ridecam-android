@@ -549,8 +549,17 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Stopping");
                 mRecorder.stop();
 
+                Log.d(TAG, "R: Unregistering Recording Surface");
+                mRecorder.unregisterRecordingSurface(mCamera);
+
+                Log.d(TAG, "R: Reseting recorder");
+                mRecorder.reset();
+
                 Log.d(TAG, "R: Releasing recorder");
                 mRecorder.release();
+
+                Log.d(TAG, "R: Locking camera");
+                mCamera.lock();
 
                 showForegroundNotification("Not Recording");
             } finally {

@@ -37,6 +37,7 @@ public interface CameraEngine<E> {
     public void release();
     public E getUnderlyingCamera();
     public void unlock();
+    public void lock();
 
     // Added
     public CameraInfo getCameraInfo();

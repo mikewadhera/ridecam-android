@@ -35,9 +35,11 @@ public interface RecorderEngine {
     public void prepare() throws IllegalStateException, IOException;
     public void start();
     public void stop();
+    public void reset();
     public void release();
 
     // Non-standard API required by Samsung
     public void registerRecordingSurface(CameraEngine camera);
+    public void unregisterRecordingSurface(CameraEngine camera);
 
 }
