@@ -20,10 +20,12 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.ridecam.av.CameraEngine;
@@ -157,11 +159,11 @@ public class MainActivity extends AppCompatActivity {
     public void loadLayout() {
         setContentView(R.layout.fragment_camera);
 
-        View view = findViewById(R.id.record_frame);
-        view.setOnLongClickListener(new View.OnLongClickListener() {
+        Button recordButton = (Button)findViewById(R.id.record_button);
+        recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View view) {
-                return toggleRecording();
+            public void onClick(View view) {
+                toggleRecording();
             }
         });
     }
@@ -184,17 +186,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void render() {
+        Button buttonView = (Button)findViewById(R.id.record_button);
         View previewView = findViewById(R.id.record_frame);
-        Drawable previewViewBackground;
 
         if (CameraService.isRecording()) {
-            previewViewBackground = getResources().getDrawable(R.drawable.record_frame_on);
+            previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
+            buttonView.setText("FINISH");
         } else {
-            previewViewBackground = getResources().getDrawable(R.drawable.record_frame);
+            previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
+            buttonView.setText("START");
         }
-
-        previewView.setBackgroundDrawable(previewViewBackground);
-
 
     }
 
@@ -603,7 +604,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void flash(String text) {
-            Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+            Toast toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.CENTER_VERTICAL|Gravity.CENTER, 0, 0);
+            toast.show();
         }
 
         public WindowManager getWindowManager() {
