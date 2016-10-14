@@ -2,6 +2,7 @@ package com.ridecam.model;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.ridecam.geo.Utils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -66,6 +67,20 @@ public class Trip {
 
     public void setVideoUrl(String videoUrl) {
         this.videoUrl = videoUrl;
+    }
+
+    public long getDistanceInMiles() {
+        double total = 0;
+        Coordinate lastCoordinate = null;
+        for (Coordinate c : getCoordinates()) {
+            double distance = 0;
+            if (lastCoordinate != null) {
+                distance = Utils.distance(c.latitude, c.longitude, lastCoordinate.latitude, lastCoordinate.longitude);
+            }
+            total += distance;
+            lastCoordinate = c;
+        }
+        return Math.round(total);
     }
 
     public static class SaveCommand {
