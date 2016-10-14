@@ -11,6 +11,9 @@ import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -34,6 +37,7 @@ import com.ridecam.av.OSRecorder;
 import com.ridecam.av.RecorderEngine;
 import com.ridecam.av.vendor.SamsungCamera;
 import com.ridecam.av.vendor.SamsungRecorder;
+import com.ridecam.geo.ReverseGeocoder;
 
 import java.io.File;
 import java.io.IOException;
@@ -271,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public static class CameraService extends Service {
+    public static class CameraService extends Service implements LocationListener {
 
         private static final String TAG = "CameraService";
 
@@ -291,6 +295,7 @@ public class MainActivity extends AppCompatActivity {
         private static boolean sRecordingLock;
         private CameraEngine mCamera;
         private RecorderEngine mRecorder;
+        private LocationManager mLocationManager;
 
         public static boolean isRecording() { return sRecordingLock; }
 
@@ -345,12 +350,14 @@ public class MainActivity extends AppCompatActivity {
         public void handleOnResume() {
             if (!sRecordingLock) {
                 acquireCamera();
+                startLocationUpdates();
             }
         }
 
         public void handleOnStop() {
             if (!sRecordingLock) {
                 releaseCamera();
+                stopLocationUpdates();
             }
         }
 
@@ -578,6 +585,53 @@ public class MainActivity extends AppCompatActivity {
             flash("Recording Stopped");
 
             Log.d(TAG, "R: Stopped");
+        }
+
+        public void startLocationUpdates() {
+            mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30 * 1000, 20, this);
+        }
+
+        public void stopLocationUpdates() {
+            if (mLocationManager != null) {
+                mLocationManager.removeUpdates(this);
+                mLocationManager = null;
+            }
+        }
+
+        // LocationListener
+        @Override
+        public void onLocationChanged(final Location location) {
+            Log.e(TAG, location.getLatitude() + " " + location.getLongitude());
+            Intent intent = new Intent(this, ReverseGeocoder.class);
+            intent.putExtra(ReverseGeocoder.LOCATION_DATA_EXTRA, location);
+            intent.putExtra(ReverseGeocoder.RECEIVER, new android.os.ResultReceiver(null) {
+                @Override
+                protected void onReceiveResult(int resultCode, Bundle resultData) {
+                    String result = resultData.getString(ReverseGeocoder.RESULT_DATA_KEY);
+                    onLocationGeocoded(location, result);
+                }
+            });
+            startService(intent);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+
+        }
+
+        public void onLocationGeocoded(Location location, String address) {
+            Log.e(TAG, address);
         }
 
         private void showForegroundNotification(String contentText) {

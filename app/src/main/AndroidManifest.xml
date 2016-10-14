@@ -8,6 +8,7 @@
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature android:name="android.hardware.location.gps" />
 
     <application
         android:allowBackup="true"
@@ -32,6 +33,9 @@
         </activity>
         <service
             android:name="com.ridecam.MainActivity$CameraService"
+            android:exported="false"/>
+        <service
+            android:name="com.ridecam.geo.ReverseGeocoder"
             android:exported="false"/>
     </application>
 
