@@ -653,6 +653,7 @@ public class MainActivity extends AppCompatActivity {
             coordinate.latitude = location.getLatitude();
             coordinate.longitude = location.getLongitude();
             coordinate.timestamp = location.getTime();
+            coordinate.bearing = location.getBearing();
             coordinate.title = address;
             if (mTrip != null) {
                 mTrip.addCoordinate(coordinate);

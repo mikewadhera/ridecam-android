@@ -14,6 +14,7 @@ public class Trip {
         public double latitude;
         public double longitude;
         public long timestamp;
+        public float bearing;
         public String title;
     }
 
@@ -79,8 +80,8 @@ public class Trip {
 
         public void run() {
             Map<String, Object> tripMap = new HashMap<>();
-            tripMap.put("t0", mTrip.getStartTimestamp());
-            tripMap.put("tE", mTrip.getEndTimestamp());
+            tripMap.put("t_start", mTrip.getStartTimestamp());
+            tripMap.put("t_end", mTrip.getEndTimestamp());
 
             mDatabase.child("/trips/" + mTrip.getId()).setValue(tripMap);
 
@@ -88,10 +89,11 @@ public class Trip {
             Map<String, Object> coordinateMap;
             for (Coordinate c : mTrip.getCoordinates()) {
                 coordinateMap = new HashMap<>();
-                coordinateMap.put("la", c.latitude);
-                coordinateMap.put("lo", c.longitude);
-                coordinateMap.put("ts", c.timestamp);
-                coordinateMap.put("t", c.title);
+                coordinateMap.put("x", c.latitude);
+                coordinateMap.put("y", c.longitude);
+                coordinateMap.put("z", c.timestamp);
+                coordinateMap.put("w", c.bearing);
+                coordinateMap.put("a", c.title);
                 locationRef.push().setValue(coordinateMap);
             }
         }
