@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "386957957018",
+    "firebase_url": "https://ridecam-b2023.firebaseio.com",
+    "project_id": "ridecam-b2023",
+    "storage_bucket": "ridecam-b2023.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386957957018:android:8e86bbcf0665005e",
+        "android_client_info": {
+          "package_name": "com.ridecam"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "386957957018-f277uec6298nqhsvh91u36kss3h2iepc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBp2MaFjjGA_01GrnI8cjOWnsv0tKN1MIs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

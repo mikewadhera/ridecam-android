@@ -10,7 +10,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -38,6 +37,7 @@ import com.ridecam.av.RecorderEngine;
 import com.ridecam.av.vendor.SamsungCamera;
 import com.ridecam.av.vendor.SamsungRecorder;
 import com.ridecam.geo.ReverseGeocoder;
+import com.ridecam.model.Trip;
 
 import java.io.File;
 import java.io.IOException;
@@ -296,6 +296,8 @@ public class MainActivity extends AppCompatActivity {
         private CameraEngine mCamera;
         private RecorderEngine mRecorder;
         private LocationManager mLocationManager;
+        private Trip.Coordinate mLastCoordinate;
+        private Trip mTrip;
 
         public static boolean isRecording() { return sRecordingLock; }
 
@@ -355,6 +357,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void handleOnStop() {
+            mLastCoordinate = null;
             if (!sRecordingLock) {
                 releaseCamera();
                 stopLocationUpdates();
@@ -486,6 +489,12 @@ public class MainActivity extends AppCompatActivity {
                     mRecorder = new OSRecorder();
                 }
 
+                String tripId = Trip.allocateId();
+                mTrip = new Trip(tripId);
+                if (mLastCoordinate != null) {
+                    mTrip.addCoordinate(mLastCoordinate);
+                }
+
                 mRecorder.setOnErrorListener(new RecorderEngine.OnErrorListener() {
                     @Override
                     public void onError(RecorderEngine recorder, int errorType, int errorCode) {
@@ -548,6 +557,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Registering Recording Surface");
                 mRecorder.registerRecordingSurface(mCamera);
 
+                mTrip.setStartTimestamp(System.currentTimeMillis());
+
                 Log.d(TAG, "R: Started");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -577,9 +588,17 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "R: Locking camera");
                 mCamera.lock();
 
+                mTrip.setEndTimestamp(System.currentTimeMillis());
+
+                Trip.SaveCommand saveCommand = new Trip.SaveCommand(mTrip);
+                saveCommand.run();
+
                 showForegroundNotification("Not Recording");
+            } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 sRecordingLock = false;
+                mTrip = null;
             }
 
             flash("Recording Stopped");
@@ -602,7 +621,6 @@ public class MainActivity extends AppCompatActivity {
         // LocationListener
         @Override
         public void onLocationChanged(final Location location) {
-            Log.e(TAG, location.getLatitude() + " " + location.getLongitude());
             Intent intent = new Intent(this, ReverseGeocoder.class);
             intent.putExtra(ReverseGeocoder.LOCATION_DATA_EXTRA, location);
             intent.putExtra(ReverseGeocoder.RECEIVER, new android.os.ResultReceiver(null) {
@@ -631,7 +649,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void onLocationGeocoded(Location location, String address) {
-            Log.e(TAG, address);
+            Trip.Coordinate coordinate = new Trip.Coordinate();
+            coordinate.latitude = location.getLatitude();
+            coordinate.longitude = location.getLongitude();
+            coordinate.timestamp = location.getTime();
+            coordinate.title = address;
+            if (mTrip != null) {
+                mTrip.addCoordinate(coordinate);
+            } else {
+                mLastCoordinate = coordinate;
+            }
         }
 
         private void showForegroundNotification(String contentText) {
