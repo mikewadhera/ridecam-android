@@ -28,14 +28,17 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.OSCamera;
 import com.ridecam.av.OSRecorder;
 import com.ridecam.av.RecorderEngine;
+import com.ridecam.av.AVUtils;
 import com.ridecam.av.vendor.SamsungCamera;
 import com.ridecam.av.vendor.SamsungRecorder;
+import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.ReverseGeocoder;
 import com.ridecam.model.Trip;
 
@@ -45,10 +48,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
+import static com.ridecam.Knobs.BITRATE;
+import static com.ridecam.Knobs.MAX_REC_LENGTH_MS;
 
-public class MainActivity extends AppCompatActivity {
+public class TripActivity extends AppCompatActivity {
 
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "TripActivity";
 
     public static SurfaceTexture sCachedSurfaceTexture;
     public static TextureView.SurfaceTextureListener sTextureViewListener;
@@ -96,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int surfaceWidth, int surfaceHeight) {
                         sCachedSurfaceTexture = surfaceTexture;
                         manuallyRotatePreviewIfNeeded(surfaceWidth, surfaceHeight);
-                        Intent intent = new Intent(MainActivity.this, CameraService.class);
+                        Intent intent = new Intent(TripActivity.this, CameraService.class);
                         intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
                         startService(intent);
                         render();
@@ -105,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
                         // return "false" so that TextureView does not release cached SurfaceTexture
-                        return (surfaceTexture != MainActivity.sCachedSurfaceTexture);
+                        return (surfaceTexture != TripActivity.sCachedSurfaceTexture);
                     }
 
                     @Override
@@ -174,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean toggleRecording() {
         if (hasPermissions()) {
-            Intent intent = new Intent(MainActivity.this, CameraService.class);
+            Intent intent = new Intent(TripActivity.this, CameraService.class);
             intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_RECORD);
             intent.putExtra(CameraService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
                 @Override
@@ -192,7 +197,10 @@ public class MainActivity extends AppCompatActivity {
     public void render() {
         Button buttonView = (Button)findViewById(R.id.record_button);
         View previewView = findViewById(R.id.record_frame);
+        TextView capacityView = (TextView)findViewById(R.id.record_capacity);
 
+        int capacityHours = AVUtils.estimateVideoDurationHours(Knobs.REC_BITRATE, Knobs.getMaximumRecordingFileSizeBytes());
+        capacityView.setText(capacityHours + "HRS");
         if (CameraService.isRecording()) {
             previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
             buttonView.setText("FINISH");
@@ -392,8 +400,8 @@ public class MainActivity extends AppCompatActivity {
                         });
                         setCameraDisplayOrientation(mCamera);
                         CameraEngine.Parameters params = mCamera.getParameters();
-                        params.setPreviewSize(1280, 720);
-                        params.setPreviewFpsRange(24000, 24000);
+                        params.setPreviewSize(Knobs.PREVIEW_WIDTH, Knobs.PREVIEW_HEIGHT);
+                        params.setPreviewFpsRange(Knobs.PREVIEW_FPS * 1000, Knobs.PREVIEW_FPS * 1000);
                         params.setFocusMode(CameraEngine.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                         mCamera.setParameters(params);
 
@@ -521,15 +529,18 @@ public class MainActivity extends AppCompatActivity {
                 mRecorder.setOrientationHint(90);
 
                 Log.d(TAG, "R: Setting sources");
-                //mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
                 mRecorder.setVideoSource(OSRecorder.VideoSource.CAMERA);
 
                 Log.d(TAG, "R: Setting profile");
                 mRecorder.setOutputFormat(OSRecorder.OutputFormat.MPEG_4);
-                mRecorder.setVideoSize(1280, 720);
-                mRecorder.setVideoFrameRate(24);
-                mRecorder.setVideoEncodingBitRate(690000);
+                mRecorder.setVideoSize(Knobs.REC_WIDTH, Knobs.REC_HEIGHT);
+                mRecorder.setVideoFrameRate(Knobs.REC_FPS);
+                mRecorder.setVideoEncodingBitRate(Knobs.REC_BITRATE);
                 mRecorder.setVideoEncoder(OSRecorder.VideoEncoder.H264);
+
+                Log.d(TAG, "R: Setting max outputs");
+                mRecorder.setMaxFileSize(Knobs.getMaximumRecordingFileSizeBytes());
+                mRecorder.setMaxDuration(MAX_REC_LENGTH_MS);
 
                 Log.d(TAG, "R: Setting output file");
                 mRecorder.setOutputFile(getOutputMediaFilePath(MEDIA_TYPE_VIDEO));
@@ -594,6 +605,8 @@ public class MainActivity extends AppCompatActivity {
                 saveCommand.run();
 
                 showForegroundNotification("Not Recording");
+
+                startSummaryActivity(mTrip.getId());
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -606,9 +619,15 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "R: Stopped");
         }
 
+        public void startSummaryActivity(String tripId) {
+            Intent intent = new Intent(getBaseContext(), TripSummaryActivity.class);
+            intent.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, tripId);
+            startActivity(intent);
+        }
+
         public void startLocationUpdates() {
             mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30 * 1000, 20, this);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Knobs.GPS_MIN_TIME_CHANGE_MS, Knobs.GPS_MIN_DISTANCE_CHANGE_M, this);
         }
 
         public void stopLocationUpdates() {
@@ -665,7 +684,7 @@ public class MainActivity extends AppCompatActivity {
         private void showForegroundNotification(String contentText) {
             // Create intent that will bring our app to the front, as if it was tapped in the app
             // launcher
-            Intent showTaskIntent = new Intent(getApplicationContext(), MainActivity.class);
+            Intent showTaskIntent = new Intent(getApplicationContext(), TripActivity.class);
             showTaskIntent.setAction(Intent.ACTION_MAIN);
             showTaskIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             showTaskIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

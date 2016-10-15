@@ -107,4 +107,12 @@ public class OSRecorder implements RecorderEngine {
         mRecorder.release();
     }
 
+    public void setMaxDuration(int maxDurationMs) {
+        mRecorder.setMaxDuration(maxDurationMs);
+    }
+
+    public void setMaxFileSize(long maxFileSizeBytes) {
+        mRecorder.setMaxFileSize(maxFileSizeBytes);
+    }
+
 }

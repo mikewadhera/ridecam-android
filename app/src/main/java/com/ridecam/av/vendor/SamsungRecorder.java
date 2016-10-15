@@ -185,6 +185,24 @@ public class SamsungRecorder implements RecorderEngine {
         }
     }
 
+    public void setMaxDuration(int maxDurationMs) {
+        try {
+            Method setMaxDurationMethod = klass().getDeclaredMethod("setMaxDuration", Integer.TYPE);
+            setMaxDurationMethod.invoke(mRecorder, maxDurationMs);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setMaxFileSize(long maxFileSizeBytes) {
+        try {
+            Method setMaxFileSizeMethod = klass().getDeclaredMethod("setMaxFileSize", Long.TYPE);
+            setMaxFileSizeMethod.invoke(mRecorder, maxFileSizeBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public Class<?> klass() throws ClassNotFoundException {
         return Class.forName("com.sec.android.secmediarecorder.SecMediaRecorder");
     }

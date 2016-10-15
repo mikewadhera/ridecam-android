@@ -39,6 +39,8 @@ public interface RecorderEngine {
     public void stop();
     public void reset();
     public void release();
+    public void setMaxDuration(int maxDurationMs);
+    public void setMaxFileSize(long maxFileSizeBytes);
 
     // Non-standard API required by Samsung
     public void registerRecordingSurface(CameraEngine camera);
