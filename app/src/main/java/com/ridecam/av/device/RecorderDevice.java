@@ -1,14 +1,11 @@
-package com.ridecam.av;
-
-import android.media.MediaRecorder;
-import android.view.Surface;
+package com.ridecam.av.device;
 
 import java.io.IOException;
 
-public interface RecorderEngine {
+public interface RecorderDevice {
 
     public interface OnErrorListener {
-        public void onError(RecorderEngine mediaRecorder, int errorType, int errorCode);
+        public void onError(RecorderDevice mediaRecorder, int errorType, int errorCode);
     }
 
     public final class VideoSource {
@@ -24,7 +21,7 @@ public interface RecorderEngine {
     }
 
     public void setOnErrorListener(OnErrorListener errorListener);
-    public void setCamera(CameraEngine cameraEngine);
+    public void setCamera(CameraDevice cameraDevice);
     public void setOrientationHint(int orientationHint);
     public void setVideoSource(int videoSource);
     public void setAudioSource(int audioSource);
@@ -43,7 +40,7 @@ public interface RecorderEngine {
     public void setMaxFileSize(long maxFileSizeBytes);
 
     // Non-standard API required by Samsung
-    public void registerRecordingSurface(CameraEngine camera);
-    public void unregisterRecordingSurface(CameraEngine camera);
+    public void registerRecordingSurface(CameraDevice camera);
+    public void unregisterRecordingSurface(CameraDevice camera);
 
 }

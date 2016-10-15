@@ -1,45 +1,126 @@
 package com.ridecam.av;
 
+import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.view.SurfaceHolder;
+import android.util.Log;
+import android.view.Surface;
+import android.view.WindowManager;
 
-import java.io.IOException;
+import com.ridecam.Knobs;
+import com.ridecam.av.device.CameraDevice;
+import com.ridecam.av.device.OSCamera;
+import com.ridecam.av.device.vendor.SamsungCamera;
 
-public interface CameraEngine<E> {
+import static com.ridecam.TripActivity.sCachedSurfaceTexture;
 
-    public interface ErrorCallback {
-        void onError(int errorType, CameraEngine cameraEngine);
+public class CameraEngine {
+
+    private static final String TAG = "CameraEngine";
+
+    private Context mContext;
+    private SurfaceTexture mSurfaceTexture;
+    private CameraDevice mCamera;
+    private boolean mAcquiringCameraLock;
+
+    public CameraEngine(Context context, SurfaceTexture surfaceTexture) {
+        mContext = context;
+        mSurfaceTexture = surfaceTexture;
     }
 
-    public interface Parameters<P> {
-
-        public static final String FOCUS_MODE_CONTINUOUS_VIDEO = "continuous-video";
-
-        public void setPreviewSize(int width, int height);
-        public void setPreviewFpsRange(int minFps, int maxFps);
-        public void setFocusMode(String value);
-        //public void setRecordingHint(boolean recordingHint);
-        //public void setPictureSize(int width, int height);
-        public P getUnderlyingParameters();
+    public static boolean usingSamsungCameraEngine() {
+        return (SamsungCamera.isAvailable() && !Knobs.FORCE_NATIVE_CAMERA);
     }
 
-    public interface CameraInfo {
-        public int getOrientation();
+    public void acquireCamera() {
+        if (mCamera == null && !mAcquiringCameraLock) {
+
+            // Hold a lock to avoid double acquiring
+
+            mAcquiringCameraLock = true;
+
+            try {
+                if (sCachedSurfaceTexture != null) {
+
+                    if (usingSamsungCameraEngine()) {
+                        mCamera = SamsungCamera.open();
+                    } else {
+                        mCamera = OSCamera.open();
+                    }
+
+                    mCamera.setErrorCallback(new CameraDevice.ErrorCallback() {
+                        @Override
+                        public void onError(int errorType, CameraDevice camera) {
+                            onCameraError(errorType);
+                        }
+                    });
+                    setCameraDisplayOrientation(mCamera);
+                    CameraDevice.Parameters params = mCamera.getParameters();
+                    params.setPreviewSize(Knobs.PREVIEW_WIDTH, Knobs.PREVIEW_HEIGHT);
+                    params.setPreviewFpsRange(Knobs.PREVIEW_FPS * 1000, Knobs.PREVIEW_FPS * 1000);
+                    params.setFocusMode(CameraDevice.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                    mCamera.setParameters(params);
+
+                    mCamera.setPreviewTexture(mSurfaceTexture);
+
+                    mCamera.startPreview();
+
+                } else {
+
+                    // Bad place to be
+                    // In practice we should never acquire the camera before we
+                    // cache a surface texture as we start service
+                    // from onSurfaceTextureAvailable
+                    // TODO add logging
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                mAcquiringCameraLock = false;
+            }
+
+        }
     }
 
-    public void setErrorCallback(ErrorCallback errorCallback);
-    public void setDisplayOrientation(int orientation);
-    public CameraEngine.Parameters getParameters();
-    public void setParameters(CameraEngine.Parameters params);
-    public void setPreviewTexture(SurfaceTexture surfaceTexture) throws IOException;
-    public void startPreview();
-    public void stopPreview();
-    public void release();
-    public E getUnderlyingCamera();
-    public void unlock();
-    public void lock();
+    public void releaseCamera() {
+        if (mCamera != null) {
+            try {
+                mCamera.stopPreview();
+                mCamera.release();
+            } finally {
+                mCamera = null;
+            }
+        }
+        mAcquiringCameraLock = false; // just to be safe
+    }
 
-    // Added
-    public CameraInfo getCameraInfo();
+    public void lockCamera() {
 
+    }
+
+    public CameraDevice getDevice() {
+        return mCamera;
+    }
+
+    public void onCameraError(int errorType) {
+        Log.e(TAG, "!!!!!!! onCameraError errorType: " + errorType);
+        // TODO add logging
+    }
+
+    public void setCameraDisplayOrientation(CameraDevice camera) {
+        int rotation = ((WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 0; break;
+            case Surface.ROTATION_90: degrees = 90; break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
+        }
+        int result;
+        CameraDevice.CameraInfo info = camera.getCameraInfo();
+
+        result = (info.getOrientation() - degrees + 360) % 360;
+        Log.d(TAG, "Adjusting preview orientation degrees: " + String.valueOf(result));
+        camera.setDisplayOrientation(result);
+    }
 }

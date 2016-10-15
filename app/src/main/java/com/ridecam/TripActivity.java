@@ -32,13 +32,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ridecam.av.CameraEngine;
-import com.ridecam.av.OSCamera;
-import com.ridecam.av.OSRecorder;
-import com.ridecam.av.RecorderEngine;
+import com.ridecam.av.device.CameraDevice;
+import com.ridecam.av.device.OSCamera;
+import com.ridecam.av.device.OSRecorder;
+import com.ridecam.av.device.RecorderDevice;
 import com.ridecam.av.AVUtils;
-import com.ridecam.av.vendor.SamsungCamera;
-import com.ridecam.av.vendor.SamsungRecorder;
-import com.ridecam.fs.FSUtils;
+import com.ridecam.av.device.vendor.SamsungCamera;
+import com.ridecam.av.device.vendor.SamsungRecorder;
 import com.ridecam.geo.ReverseGeocoder;
 import com.ridecam.model.Trip;
 
@@ -48,7 +48,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
-import static com.ridecam.Knobs.BITRATE;
 import static com.ridecam.Knobs.MAX_REC_LENGTH_MS;
 
 public class TripActivity extends AppCompatActivity {
@@ -212,7 +211,7 @@ public class TripActivity extends AppCompatActivity {
     }
 
     private void manuallyRotatePreviewIfNeeded(int width, int height) {
-        if (CameraService.usingSamsungCameraEngine()) {
+        if (CameraEngine.usingSamsungCameraEngine()) {
             Matrix matrix = new Matrix();
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             RectF textureRectF = new RectF(0, 0, width, height);
@@ -297,12 +296,9 @@ public class TripActivity extends AppCompatActivity {
 
         public static final String RESULT_RECEIVER = "resultReceiver";
 
-        private static final boolean FORCE_NATIVE_CAMERA = false;
-
-        private boolean mAcquiringCameraLock;
         private static boolean sRecordingLock;
-        private CameraEngine mCamera;
-        private RecorderEngine mRecorder;
+        private CameraEngine mCameraEngine;
+        private RecorderDevice mRecorder;
         private LocationManager mLocationManager;
         private Trip.Coordinate mLastCoordinate;
         private Trip mTrip;
@@ -340,11 +336,6 @@ public class TripActivity extends AppCompatActivity {
             }
         }
 
-        public void onCameraError(int errorType) {
-            Log.e(TAG, "!!!!!!! onCameraError errorType: " + errorType);
-            // TODO add logging
-        }
-
         public void onRecorderError(int errorType, int errorCode) {
             Log.e(TAG, "!!!!!!! onRecorderError errorType: " + errorType + " errorCode: " + errorCode);
             // TODO add logging
@@ -373,74 +364,28 @@ public class TripActivity extends AppCompatActivity {
         }
 
         public static boolean usingSamsungCameraEngine() {
-            return (SamsungCamera.isAvailable() && !FORCE_NATIVE_CAMERA);
+            return (SamsungCamera.isAvailable() && !Knobs.FORCE_NATIVE_CAMERA);
         }
 
         public void acquireCamera() {
-            if (mCamera == null && !mAcquiringCameraLock) {
-
-                // Hold a lock to avoid double acquiring
-
-                mAcquiringCameraLock = true;
-
-                try {
-                    if (sCachedSurfaceTexture != null) {
-
-                        if (usingSamsungCameraEngine()) {
-                            mCamera = SamsungCamera.open();
-                        } else {
-                            mCamera = OSCamera.open();
-                        }
-
-                        mCamera.setErrorCallback(new CameraEngine.ErrorCallback() {
-                            @Override
-                            public void onError(int errorType, CameraEngine camera) {
-                                onCameraError(errorType);
-                            }
-                        });
-                        setCameraDisplayOrientation(mCamera);
-                        CameraEngine.Parameters params = mCamera.getParameters();
-                        params.setPreviewSize(Knobs.PREVIEW_WIDTH, Knobs.PREVIEW_HEIGHT);
-                        params.setPreviewFpsRange(Knobs.PREVIEW_FPS * 1000, Knobs.PREVIEW_FPS * 1000);
-                        params.setFocusMode(CameraEngine.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-                        mCamera.setParameters(params);
-
-                        mCamera.setPreviewTexture(sCachedSurfaceTexture);
-
-                        mCamera.startPreview();
-
-                    } else {
-
-                        // Bad place to be
-                        // In practice we should never acquire the camera before we
-                        // cache a surface texture as we start service
-                        // from onSurfaceTextureAvailable
-                        // TODO add logging
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    mAcquiringCameraLock = false;
-                }
-
+            if (mCameraEngine == null) {
+                mCameraEngine = new CameraEngine(this, sCachedSurfaceTexture);
+                mCameraEngine.acquireCamera();
             }
         }
 
         public void releaseCamera() {
-            if (mCamera != null) {
+            if (mCameraEngine != null) {
                 try {
-                    mCamera.stopPreview();
-                    mCamera.release();
+                   mCameraEngine.releaseCamera();
                 } finally {
-                    mCamera = null;
+                    mCameraEngine = null;
                 }
             }
-            mAcquiringCameraLock = false; // just to be safe
         }
 
         public void toggleRecording() {
-            if (mCamera != null) {
+            if (mCameraEngine != null) {
                 if (sRecordingLock) {
                     stopRecording();
                 } else {
@@ -503,15 +448,15 @@ public class TripActivity extends AppCompatActivity {
                     mTrip.addCoordinate(mLastCoordinate);
                 }
 
-                mRecorder.setOnErrorListener(new RecorderEngine.OnErrorListener() {
+                mRecorder.setOnErrorListener(new RecorderDevice.OnErrorListener() {
                     @Override
-                    public void onError(RecorderEngine recorder, int errorType, int errorCode) {
+                    public void onError(RecorderDevice recorder, int errorType, int errorCode) {
                         onRecorderError(errorType, errorCode);
                     }
                 });
 
                 Log.d(TAG, "R: Obtaining Camera");
-                CameraEngine camera = mCamera;
+                CameraDevice camera = mCameraEngine.getDevice();
 
                 if (camera == null) {
                     flash("Recording Failed: No Camera");
@@ -566,7 +511,7 @@ public class TripActivity extends AppCompatActivity {
                 flash("Recording Started");
 
                 Log.d(TAG, "R: Registering Recording Surface");
-                mRecorder.registerRecordingSurface(mCamera);
+                mRecorder.registerRecordingSurface(camera);
 
                 mTrip.setStartTimestamp(System.currentTimeMillis());
 
@@ -588,7 +533,7 @@ public class TripActivity extends AppCompatActivity {
                 mRecorder.stop();
 
                 Log.d(TAG, "R: Unregistering Recording Surface");
-                mRecorder.unregisterRecordingSurface(mCamera);
+                mRecorder.unregisterRecordingSurface(mCameraEngine.getDevice());
 
                 Log.d(TAG, "R: Reseting recorder");
                 mRecorder.reset();
@@ -597,7 +542,7 @@ public class TripActivity extends AppCompatActivity {
                 mRecorder.release();
 
                 Log.d(TAG, "R: Locking camera");
-                mCamera.lock();
+                mCameraEngine.lockCamera();
 
                 mTrip.setEndTimestamp(System.currentTimeMillis());
 
@@ -712,23 +657,6 @@ public class TripActivity extends AppCompatActivity {
 
         public WindowManager getWindowManager() {
             return (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        }
-
-        public void setCameraDisplayOrientation(CameraEngine camera) {
-            int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            int degrees = 0;
-            switch (rotation) {
-                case Surface.ROTATION_0: degrees = 0; break;
-                case Surface.ROTATION_90: degrees = 90; break;
-                case Surface.ROTATION_180: degrees = 180; break;
-                case Surface.ROTATION_270: degrees = 270; break;
-            }
-            int result;
-            CameraEngine.CameraInfo info = camera.getCameraInfo();
-
-            result = (info.getOrientation() - degrees + 360) % 360;
-            Log.d(TAG, "Adjusting preview orientation degrees: " + String.valueOf(result));
-            camera.setDisplayOrientation(result);
         }
 
         public static final int MEDIA_TYPE_VIDEO = 2;

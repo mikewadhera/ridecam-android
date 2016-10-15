@@ -1,12 +1,12 @@
-package com.ridecam.av.vendor;
+package com.ridecam.av.device.vendor;
 
-import com.ridecam.av.CameraEngine;
-import com.ridecam.av.RecorderEngine;
+import com.ridecam.av.device.CameraDevice;
+import com.ridecam.av.device.RecorderDevice;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-public class SamsungRecorder implements RecorderEngine {
+public class SamsungRecorder implements RecorderDevice {
 
     private Object mRecorder; // com.sec.android.secmediarecorder.SecMediaRecorder
 
@@ -35,14 +35,14 @@ public class SamsungRecorder implements RecorderEngine {
         };
     }
 
-    public void setCamera(CameraEngine camera) {
+    public void setCamera(CameraDevice camera) {
         // The samsung camera app doesn't actually call setCamera()
         // when initializing recorder under dual cameras.
         // Instead it uses a non-standard API called registerRecordingSurface()
         // which must be called *after* recording begins
     }
 
-    public void registerRecordingSurface(CameraEngine camera) {
+    public void registerRecordingSurface(CameraDevice camera) {
         try {
             Method setRecordingSurfaceMethod = klass().getDeclaredMethod("registerRecordingSurface", SamsungCamera.klass());
             setRecordingSurfaceMethod.invoke(mRecorder, camera.getUnderlyingCamera());
@@ -51,7 +51,7 @@ public class SamsungRecorder implements RecorderEngine {
         }
     }
 
-    public void unregisterRecordingSurface(CameraEngine camera) {
+    public void unregisterRecordingSurface(CameraDevice camera) {
         try {
             Method unsetRecordingSurfaceMethod = klass().getDeclaredMethod("unregisterRecordingSurface", SamsungCamera.klass());
             unsetRecordingSurfaceMethod.invoke(mRecorder, camera.getUnderlyingCamera());

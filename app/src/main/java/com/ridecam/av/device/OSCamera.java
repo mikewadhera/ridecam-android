@@ -1,18 +1,17 @@
-package com.ridecam.av;
+package com.ridecam.av.device;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.view.SurfaceHolder;
 
 import java.io.IOException;
 
-public class OSCamera implements CameraEngine<Camera> {
+public class OSCamera implements CameraDevice<Camera> {
 
     private static final int CAMERA_ID = 0;
 
     private Camera mCamera;
 
-    public static CameraEngine open() {
+    public static CameraDevice open() {
         return new OSCamera(Camera.open(CAMERA_ID));
     }
 
@@ -20,7 +19,7 @@ public class OSCamera implements CameraEngine<Camera> {
         mCamera = camera;
     }
 
-    public class Parameters implements CameraEngine.Parameters<Camera.Parameters> {
+    public class Parameters implements CameraDevice.Parameters<Camera.Parameters> {
 
         Camera.Parameters mParams;
 
@@ -37,7 +36,7 @@ public class OSCamera implements CameraEngine<Camera> {
         }
 
         public void setFocusMode(String value) {
-            if (value == CameraEngine.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO) {
+            if (value == FOCUS_MODE_CONTINUOUS_VIDEO) {
                 mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
             } else {
                 mParams.setFocusMode(value);
@@ -50,7 +49,7 @@ public class OSCamera implements CameraEngine<Camera> {
 
     }
 
-    public class CameraInfo implements CameraEngine.CameraInfo {
+    public class CameraInfo implements CameraDevice.CameraInfo {
 
         Camera.CameraInfo mCameraInfo;
 
@@ -80,7 +79,7 @@ public class OSCamera implements CameraEngine<Camera> {
         mCamera.stopPreview();
     }
 
-    public void setParameters(CameraEngine.Parameters parameters) {
+    public void setParameters(CameraDevice.Parameters parameters) {
         mCamera.setParameters((Camera.Parameters)parameters.getUnderlyingParameters());
     }
 

@@ -1,10 +1,9 @@
-package com.ridecam.av.vendor;
+package com.ridecam.av.device.vendor;
 
 import android.graphics.SurfaceTexture;
-import android.util.Log;
 import android.view.SurfaceHolder;
 
-import com.ridecam.av.CameraEngine;
+import com.ridecam.av.device.CameraDevice;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -12,7 +11,7 @@ import java.lang.reflect.Method;
 
 import android.util.Pair;
 
-public class SamsungCamera implements CameraEngine<Object> {
+public class SamsungCamera implements CameraDevice<Object> {
 
     private static final int CAMERA_ID = 10;
 
@@ -28,7 +27,7 @@ public class SamsungCamera implements CameraEngine<Object> {
         }
     }
 
-    public static CameraEngine open() {
+    public static CameraDevice open() {
         try {
             Class<?> secCamera = Class.forName("com.sec.android.seccamera.SecCamera");
             Method open = secCamera.getDeclaredMethod("open", Integer.TYPE);
@@ -46,7 +45,7 @@ public class SamsungCamera implements CameraEngine<Object> {
         mCamera = camera;
     }
 
-    public static class Parameters implements CameraEngine.Parameters<Object> {
+    public static class Parameters implements CameraDevice.Parameters<Object> {
 
         Object mParams; // com.sec.android.seccamera.SecCamera.Parameters
 
@@ -75,7 +74,7 @@ public class SamsungCamera implements CameraEngine<Object> {
         public void setFocusMode(String value) {
             try {
                 Method setFocusModeMethod = klass().getDeclaredMethod("setFocusMode", String.class);
-                if (value == CameraEngine.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO) {
+                if (value == CameraDevice.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO) {
                     setFocusModeMethod.invoke(mParams, Utils.getFieldValue("com.sec.android.seccamera.SecCamera$Parameters.FOCUS_MODE_CONTINUOUS_VIDEO"));
                 } else {
                     setFocusModeMethod.invoke(mParams, value);
@@ -95,7 +94,7 @@ public class SamsungCamera implements CameraEngine<Object> {
 
     }
 
-    public static class CameraInfo implements CameraEngine.CameraInfo {
+    public static class CameraInfo implements CameraDevice.CameraInfo {
 
         Object mCameraInfo; // com.sec.android.seccamera.SecCamera.CameraInfo
 
@@ -172,7 +171,7 @@ public class SamsungCamera implements CameraEngine<Object> {
         }
     }
 
-    public void setParameters(CameraEngine.Parameters parameters) {
+    public void setParameters(CameraDevice.Parameters parameters) {
         try {
             Method setParametersMethod = klass().getDeclaredMethod("setParameters", Parameters.klass());
             setParametersMethod.invoke(mCamera, parameters.getUnderlyingParameters());

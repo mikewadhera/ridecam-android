@@ -1,12 +1,11 @@
-package com.ridecam.av;
+package com.ridecam.av.device;
 
 import android.hardware.Camera;
 import android.media.MediaRecorder;
-import android.view.Surface;
 
 import java.io.IOException;
 
-public class OSRecorder implements RecorderEngine {
+public class OSRecorder implements RecorderDevice {
 
     private MediaRecorder mRecorder;
 
@@ -27,15 +26,15 @@ public class OSRecorder implements RecorderEngine {
         });
     }
 
-    public void setCamera(CameraEngine cameraEngine) {
-        mRecorder.setCamera((Camera)cameraEngine.getUnderlyingCamera());
+    public void setCamera(CameraDevice cameraDevice) {
+        mRecorder.setCamera((Camera) cameraDevice.getUnderlyingCamera());
     }
 
-    public void registerRecordingSurface(CameraEngine camera) {
+    public void registerRecordingSurface(CameraDevice camera) {
         // no-op
     }
 
-    public void unregisterRecordingSurface(CameraEngine camera) {
+    public void unregisterRecordingSurface(CameraDevice camera) {
         // no-op
     }
 
