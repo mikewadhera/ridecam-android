@@ -80,6 +80,9 @@ public class CameraEngine {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                if (mErrorListener != null) {
+                    mErrorListener.onCameraError();
+                }
             } finally {
                 mAcquiringCameraLock = false;
             }

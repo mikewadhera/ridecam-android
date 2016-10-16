@@ -200,6 +200,7 @@ public class RecorderEngine {
     }
 
     public void fatal(String text) {
+        Log.e(TAG, text);
         // TODO add logging
     }
 

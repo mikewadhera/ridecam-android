@@ -48,6 +48,8 @@ public class TripActivity extends AppCompatActivity {
 
     public static SurfaceTexture sCachedSurfaceTexture;
     public static TextureView.SurfaceTextureListener sTextureViewListener;
+    public static int sTextureViewWidth;
+    public static int sTextureViewHeight;
 
     private BroadcastReceiver mReRenderReceiver;
 
@@ -110,7 +112,9 @@ public class TripActivity extends AppCompatActivity {
                     @Override
                     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int surfaceWidth, int surfaceHeight) {
                         sCachedSurfaceTexture = surfaceTexture;
-                        manuallyRotatePreviewIfNeeded(surfaceWidth, surfaceHeight);
+                        sTextureViewWidth = surfaceWidth;
+                        sTextureViewHeight = surfaceHeight;
+                        manuallyRotatePreviewIfNeeded();
                         Intent intent = new Intent(TripActivity.this, CameraService.class);
                         intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
                         startService(intent);
@@ -146,6 +150,8 @@ public class TripActivity extends AppCompatActivity {
                     }
 
                 }
+
+                manuallyRotatePreviewIfNeeded();
                 Intent intent = new Intent(this, CameraService.class);
                 intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
                 startService(intent);
@@ -230,8 +236,10 @@ public class TripActivity extends AppCompatActivity {
 
     }
 
-    private void manuallyRotatePreviewIfNeeded(int width, int height) {
+    private void manuallyRotatePreviewIfNeeded() {
         if (CameraEngine.usingSamsungDualCamera()) {
+            int width = sTextureViewWidth;
+            int height = sTextureViewHeight;
             Matrix matrix = new Matrix();
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             RectF textureRectF = new RectF(0, 0, width, height);
@@ -358,7 +366,11 @@ public class TripActivity extends AppCompatActivity {
         }
 
         public boolean isTripInProgress() {
-            return mRecorder != null && mRecorder.isRecording();
+            if (mRecorder == null) {
+                return false;
+            } else {
+                return mRecorder.isRecording();
+            }
         }
 
         @Override
@@ -467,31 +479,27 @@ public class TripActivity extends AppCompatActivity {
         }
 
         public void startTrip() {
-            if (mRecorder == null) {
-                if (mCameraEngine != null) {
-                    mRecorder = new RecorderEngine(mCameraEngine);
+            if (mCameraEngine != null) {
+                mRecorder = new RecorderEngine(mCameraEngine);
 
-                    mRecorder.setErrorListener(this);
-                    mRecorder.startRecording();
-                    if (mRecorder.isRecording()) {
-                        flash("Recording");
-                        showForegroundNotification("Recording");
-                        String tripId = Trip.allocateId();
-                        mTrip = new Trip(tripId);
-                        mTrip.setStartTimestamp(System.currentTimeMillis());
-                        if (mLastCoordinate != null) {
-                            mTrip.addCoordinate(mLastCoordinate);
-                        }
-                    } else {
-                        flash("Unable to Start Record");
-                        showForegroundNotification("Recording Failed");
-                        // TODO add logging
+                mRecorder.setErrorListener(this);
+                mRecorder.startRecording();
+                if (mRecorder.isRecording()) {
+                    flash("Recording");
+                    showForegroundNotification("Recording");
+                    String tripId = Trip.allocateId();
+                    mTrip = new Trip(tripId);
+                    mTrip.setStartTimestamp(System.currentTimeMillis());
+                    if (mLastCoordinate != null) {
+                        mTrip.addCoordinate(mLastCoordinate);
                     }
                 } else {
+                    flash("Unable to Start Record");
+                    showForegroundNotification("Recording Failed");
                     // TODO add logging
                 }
             } else {
-                // TODO Add logging
+                // TODO add logging
             }
         }
 
@@ -499,6 +507,7 @@ public class TripActivity extends AppCompatActivity {
             if (mRecorder != null) {
                 mRecorder.stopRecording();
                 if (!mRecorder.isRecording()) {
+                    mRecorder = null;
                     showForegroundNotification("Finished Recording");
                     if (mTrip != null) {
                         mTrip.setEndTimestamp(System.currentTimeMillis());
@@ -522,7 +531,10 @@ public class TripActivity extends AppCompatActivity {
             // TODO add logging
             flash("Camera Error");
             mTrip = null;
-            reRenderActivity();
+            Intent intent = new Intent(getApplicationContext(), TripActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            getApplicationContext().startActivity(intent);
+            reRenderActivity(); // in case activity already foregrounded
         }
 
         @Override
@@ -530,7 +542,10 @@ public class TripActivity extends AppCompatActivity {
             // TODO add logging
             flash("Trip Stopped (Error)");
             mTrip = null;
-            reRenderActivity();
+            Intent intent = new Intent(getApplicationContext(), TripActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            getApplicationContext().startActivity(intent);
+            reRenderActivity(); // in case activity already foregrounded
         }
 
         public void startSummaryActivity(String tripId) {
