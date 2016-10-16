@@ -4,8 +4,10 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.graphics.RectF;
@@ -14,16 +16,15 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
@@ -31,31 +32,24 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ridecam.av.CameraEngine;
-import com.ridecam.av.device.CameraDevice;
-import com.ridecam.av.device.OSCamera;
-import com.ridecam.av.device.OSRecorder;
-import com.ridecam.av.device.RecorderDevice;
 import com.ridecam.av.AVUtils;
-import com.ridecam.av.device.vendor.SamsungCamera;
-import com.ridecam.av.device.vendor.SamsungRecorder;
+import com.ridecam.av.CameraEngine;
+import com.ridecam.av.RecorderEngine;
 import com.ridecam.geo.ReverseGeocoder;
 import com.ridecam.model.Trip;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
-import static com.ridecam.Knobs.MAX_REC_LENGTH_MS;
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 public class TripActivity extends AppCompatActivity {
 
     private static final String TAG = "TripActivity";
 
+    public static final String RERENDER_EVENT = "rerenderEvent";
+
     public static SurfaceTexture sCachedSurfaceTexture;
     public static TextureView.SurfaceTextureListener sTextureViewListener;
+
+    private BroadcastReceiver mReRenderReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,10 +62,27 @@ public class TripActivity extends AppCompatActivity {
         // Not to mention there is nothing interesting the service
         // would be interested about at this point
 
+        // Construct a local broadcast receiver that listens for re-render events from the service
+        mReRenderReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                render();
+            }
+        };
+
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         loadLayout();
+    }
+
+    @Override
+    public void onStart() {
+        Log.d(TAG, "onStart");
+        super.onStart();
+
+        // Register for re-render events from service
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReRenderReceiver, new IntentFilter(RERENDER_EVENT));
     }
 
     @Override
@@ -141,7 +152,6 @@ public class TripActivity extends AppCompatActivity {
                 render();
 
             }
-
         }
     }
 
@@ -155,6 +165,9 @@ public class TripActivity extends AppCompatActivity {
         Intent intent = new Intent(this, CameraService.class);
         intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONSTOP);
         startService(intent);
+
+        // Unregister for re-render events from service
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReRenderReceiver);
     }
 
     @Override
@@ -176,42 +189,49 @@ public class TripActivity extends AppCompatActivity {
         });
     }
 
-    public boolean toggleRecording() {
+    public void toggleRecording() {
         if (hasPermissions()) {
             Intent intent = new Intent(TripActivity.this, CameraService.class);
-            intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_RECORD);
-            intent.putExtra(CameraService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
-                @Override
-                protected void onReceiveResult(int code, Bundle data) {
-                    render();
-                }
-            });
+            intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_TOGGLE_TRIP);
             startService(intent);
-            return true;
         } else {
-            return false;
+            // TODO add logging
         }
     }
 
     public void render() {
-        Button buttonView = (Button)findViewById(R.id.record_button);
-        View previewView = findViewById(R.id.record_frame);
-        TextView capacityView = (TextView)findViewById(R.id.record_capacity);
-
-        int capacityHours = AVUtils.estimateVideoDurationHours(Knobs.REC_BITRATE, Knobs.getMaximumRecordingFileSizeBytes());
-        capacityView.setText(capacityHours + "HRS");
-        if (CameraService.isRecording()) {
-            previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
-            buttonView.setText("FINISH");
-        } else {
-            previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
-            buttonView.setText("START");
+        if (!hasPermissions()) {
+            return;
         }
+
+        final Button buttonView = (Button)findViewById(R.id.record_button);
+        final View previewView = findViewById(R.id.record_frame);
+        final TextView capacityView = (TextView)findViewById(R.id.record_capacity);
+
+        final int capacityHours = AVUtils.estimateVideoDurationHours(Knobs.REC_BITRATE, Knobs.getMaximumRecordingFileSizeBytes());
+        capacityView.setText(capacityHours + "HRS");
+
+        Intent intent = new Intent(this, CameraService.class);
+        intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_IS_TRIP_IN_PROGRESS);
+        intent.putExtra(CameraService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+            @Override
+            protected void onReceiveResult(int code, Bundle data) {
+                boolean isTripInProgress = data.getBoolean(CameraService.RESULT_IS_TRIP_IN_PROGRESS);
+                if (isTripInProgress) {
+                    previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
+                    buttonView.setText("FINISH");
+                } else {
+                    previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
+                    buttonView.setText("START");
+                }
+            }
+        });
+        startService(intent);
 
     }
 
     private void manuallyRotatePreviewIfNeeded(int width, int height) {
-        if (CameraEngine.usingSamsungCameraEngine()) {
+        if (CameraEngine.usingSamsungCamera()) {
             Matrix matrix = new Matrix();
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             RectF textureRectF = new RectF(0, 0, width, height);
@@ -282,7 +302,7 @@ public class TripActivity extends AppCompatActivity {
     }
 
 
-    public static class CameraService extends Service implements LocationListener {
+    public static class CameraService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, LocationListener {
 
         private static final String TAG = "CameraService";
 
@@ -292,18 +312,18 @@ public class TripActivity extends AppCompatActivity {
         private static final int COMMAND_NONE = -1;
         private static final int COMMAND_ACTIVITY_ONRESUME = 0;
         private static final int COMMAND_ACTIVITY_ONSTOP = 1;
-        private static final int COMMAND_ACTIVITY_RECORD = 2;
+        private static final int COMMAND_TOGGLE_TRIP = 2;
+        private static final int COMMAND_IS_TRIP_IN_PROGRESS = 3;
+
+        private static final String RESULT_IS_TRIP_IN_PROGRESS = "isTripInProgressResult";
 
         public static final String RESULT_RECEIVER = "resultReceiver";
 
-        private static boolean sRecordingLock;
         private CameraEngine mCameraEngine;
-        private RecorderDevice mRecorder;
+        private RecorderEngine mRecorder;
         private LocationManager mLocationManager;
         private Trip.Coordinate mLastCoordinate;
         private Trip mTrip;
-
-        public static boolean isRecording() { return sRecordingLock; }
 
         public CameraService() {
         }
@@ -323,22 +343,22 @@ public class TripActivity extends AppCompatActivity {
             // By design this should not be called much / only when app is killed
 
             try {
-                if (sRecordingLock) {
+                if (isTripInProgress()) {
                     // This is VERY bad
                     // We should *never* have the service
-                    // shutdown while a recording is in progress
-                    // TODO: Release recorder, notify user
+                    // shutdown while a trip is in progress
+                    // TODO: add logging
                 }
 
                 releaseCamera();
             } catch (Exception e) {
                 e.printStackTrace();
+                // TODO add logging
             }
         }
 
-        public void onRecorderError(int errorType, int errorCode) {
-            Log.e(TAG, "!!!!!!! onRecorderError errorType: " + errorType + " errorCode: " + errorCode);
-            // TODO add logging
+        public boolean isTripInProgress() {
+            return mRecorder != null && mRecorder.isRecording();
         }
 
         @Override
@@ -349,7 +369,7 @@ public class TripActivity extends AppCompatActivity {
         // Activity state transitions
 
         public void handleOnResume() {
-            if (!sRecordingLock) {
+            if (!isTripInProgress()) {
                 acquireCamera();
                 startLocationUpdates();
             }
@@ -357,40 +377,46 @@ public class TripActivity extends AppCompatActivity {
 
         public void handleOnStop() {
             mLastCoordinate = null;
-            if (!sRecordingLock) {
+            if (!isTripInProgress()) {
                 releaseCamera();
                 stopLocationUpdates();
             }
         }
 
-        public static boolean usingSamsungCameraEngine() {
-            return (SamsungCamera.isAvailable() && !Knobs.FORCE_NATIVE_CAMERA);
-        }
-
         public void acquireCamera() {
             if (mCameraEngine == null) {
                 mCameraEngine = new CameraEngine(this, sCachedSurfaceTexture);
+                mCameraEngine.setErrorListener(this);
                 mCameraEngine.acquireCamera();
+            } else {
+                // TODO add logging
             }
         }
 
         public void releaseCamera() {
             if (mCameraEngine != null) {
                 try {
-                   mCameraEngine.releaseCamera();
+                    mCameraEngine.releaseCamera();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // TODO add logging
                 } finally {
                     mCameraEngine = null;
                 }
+            } else {
+                // TODO add logging
             }
         }
 
-        public void toggleRecording() {
+        public void toggleTrip() {
             if (mCameraEngine != null) {
-                if (sRecordingLock) {
-                    stopRecording();
+                if (!isTripInProgress()) {
+                    startTrip();
                 } else {
-                    startRecording();
+                    stopTrip();
                 }
+            } else {
+                // TODO add logging
             }
         }
 
@@ -403,6 +429,8 @@ public class TripActivity extends AppCompatActivity {
                 return START_STICKY;
             }
 
+            ResultReceiver receiver;
+
             switch (intent.getIntExtra(START_SERVICE_COMMAND, COMMAND_NONE)) {
                 case COMMAND_ACTIVITY_ONRESUME:
                     handleOnResume();
@@ -412,161 +440,103 @@ public class TripActivity extends AppCompatActivity {
                     handleOnStop();
                     break;
 
-                case COMMAND_ACTIVITY_RECORD:
-                    toggleRecording();
-                    ResultReceiver receiver = intent.getParcelableExtra(RESULT_RECEIVER);
-                    receiver.send(0, null);
+                case COMMAND_TOGGLE_TRIP:
+                    toggleTrip();
+                    reRenderActivity();
+                    break;
+
+                case COMMAND_IS_TRIP_IN_PROGRESS:
+                    boolean isTripInProgress = isTripInProgress();
+                    receiver = intent.getParcelableExtra(RESULT_RECEIVER);
+                    Bundle bundle = new Bundle();
+                    bundle.putBoolean(RESULT_IS_TRIP_IN_PROGRESS, isTripInProgress);
+                    receiver.send(0, bundle);
                     break;
 
                 default:
+                    // TODO add logging
                     Log.e(TAG, "Cannot start service with illegal commands");
             }
 
             return START_STICKY;
         }
 
-        public void startRecording() {
-            if (sRecordingLock) {
-                flash("Recording Failed: Already in progress");
-                return;
-            }
+        public void reRenderActivity() {
+            Intent intent = new Intent(TripActivity.RERENDER_EVENT);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        }
 
-            sRecordingLock = true;
+        public void startTrip() {
+            if (mRecorder == null) {
+                if (mCameraEngine != null) {
+                    mRecorder = new RecorderEngine(mCameraEngine);
 
-            try {
-                showForegroundNotification("Recording");
-
-                if (usingSamsungCameraEngine()) {
-                    mRecorder = new SamsungRecorder();
-                } else {
-                    mRecorder = new OSRecorder();
-                }
-
-                String tripId = Trip.allocateId();
-                mTrip = new Trip(tripId);
-                if (mLastCoordinate != null) {
-                    mTrip.addCoordinate(mLastCoordinate);
-                }
-
-                mRecorder.setOnErrorListener(new RecorderDevice.OnErrorListener() {
-                    @Override
-                    public void onError(RecorderDevice recorder, int errorType, int errorCode) {
-                        onRecorderError(errorType, errorCode);
+                    mRecorder.setErrorListener(this);
+                    mRecorder.startRecording();
+                    if (mRecorder.isRecording()) {
+                        flash("Trip Started");
+                        showForegroundNotification("Recording");
+                        String tripId = Trip.allocateId();
+                        mTrip = new Trip(tripId);
+                        mTrip.setStartTimestamp(System.currentTimeMillis());
+                        if (mLastCoordinate != null) {
+                            mTrip.addCoordinate(mLastCoordinate);
+                        }
+                    } else {
+                        flash("Trip Failed to Start");
+                        showForegroundNotification("Recording Failed");
+                        // TODO add logging
                     }
-                });
-
-                Log.d(TAG, "R: Obtaining Camera");
-                CameraDevice camera = mCameraEngine.getDevice();
-
-                if (camera == null) {
-                    flash("Recording Failed: No Camera");
-                    sRecordingLock = false;
-                    return;
+                } else {
+                    // TODO add logging
                 }
-
-                Log.d(TAG, "R: Unlocking Camera");
-                camera.unlock();
-
-                Log.d(TAG, "R: Setting Camera");
-                mRecorder.setCamera(camera);
-
-                Log.d(TAG, "R: Setting Camera orientation hint");
-                mRecorder.setOrientationHint(90);
-
-                Log.d(TAG, "R: Setting sources");
-                mRecorder.setVideoSource(OSRecorder.VideoSource.CAMERA);
-
-                Log.d(TAG, "R: Setting profile");
-                mRecorder.setOutputFormat(OSRecorder.OutputFormat.MPEG_4);
-                mRecorder.setVideoSize(Knobs.REC_WIDTH, Knobs.REC_HEIGHT);
-                mRecorder.setVideoFrameRate(Knobs.REC_FPS);
-                mRecorder.setVideoEncodingBitRate(Knobs.REC_BITRATE);
-                mRecorder.setVideoEncoder(OSRecorder.VideoEncoder.H264);
-
-                Log.d(TAG, "R: Setting max outputs");
-                mRecorder.setMaxFileSize(Knobs.getMaximumRecordingFileSizeBytes());
-                mRecorder.setMaxDuration(MAX_REC_LENGTH_MS);
-
-                Log.d(TAG, "R: Setting output file");
-                mRecorder.setOutputFile(getOutputMediaFilePath(MEDIA_TYPE_VIDEO));
-
-                Log.d(TAG, "R: Prepare");
-                try {
-                    mRecorder.prepare();
-                } catch (IllegalStateException e) {
-                    Log.d(TAG, "IllegalStateException when preparing MediaRecorder: " + e.getMessage());
-                    flash("Recording Failed: Internal Error");
-                    sRecordingLock = false;
-                    return;
-                } catch (IOException e) {
-                    Log.d(TAG, "IOException when preparing MediaRecorder: " + e.getMessage());
-                    flash("Recording Failed: Internal Error");
-                    sRecordingLock = false;
-                    return;
-                }
-
-                Log.d(TAG, "R: Start");
-                mRecorder.start();
-
-                flash("Recording Started");
-
-                Log.d(TAG, "R: Registering Recording Surface");
-                mRecorder.registerRecordingSurface(camera);
-
-                mTrip.setStartTimestamp(System.currentTimeMillis());
-
-                Log.d(TAG, "R: Started");
-            } catch (Exception e) {
-                e.printStackTrace();
-                sRecordingLock = false;
+            } else {
+                // TODO Add logging
             }
         }
 
-        public void stopRecording() {
-            if (!sRecordingLock) {
-                flash("Stop Failed: Not Recording");
-                return;
+        public void stopTrip() {
+            if (mRecorder != null) {
+                mRecorder.stopRecording();
+                if (!mRecorder.isRecording()) {
+                    showForegroundNotification("Finished Recording");
+                    if (mTrip != null) {
+                        mTrip.setEndTimestamp(System.currentTimeMillis());
+                        Trip.SaveCommand saveCommand = new Trip.SaveCommand(mTrip);
+                        saveCommand.run();
+                        startSummaryActivity(mTrip.getId());
+                        mTrip = null;
+                    } else {
+                        // TODO add logging
+                    }
+                } else {
+                    // TODO add logging
+                }
+            } else {
+                // TODO add logging
             }
+        }
 
-            try {
-                Log.d(TAG, "R: Stopping");
-                mRecorder.stop();
+        @Override
+        public void onCameraError() {
+            // TODO add logging
+            flash("Camera Error");
+            mTrip = null;
+            reRenderActivity();
+        }
 
-                Log.d(TAG, "R: Unregistering Recording Surface");
-                mRecorder.unregisterRecordingSurface(mCameraEngine.getDevice());
-
-                Log.d(TAG, "R: Reseting recorder");
-                mRecorder.reset();
-
-                Log.d(TAG, "R: Releasing recorder");
-                mRecorder.release();
-
-                Log.d(TAG, "R: Locking camera");
-                mCameraEngine.lockCamera();
-
-                mTrip.setEndTimestamp(System.currentTimeMillis());
-
-                Trip.SaveCommand saveCommand = new Trip.SaveCommand(mTrip);
-                saveCommand.run();
-
-                showForegroundNotification("Not Recording");
-
-                startSummaryActivity(mTrip.getId());
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                sRecordingLock = false;
-                mTrip = null;
-            }
-
-            flash("Recording Stopped");
-
-            Log.d(TAG, "R: Stopped");
+        @Override
+        public void onRecorderError() {
+            // TODO add logging
+            flash("Trip Stopped (Error)");
+            mTrip = null;
+            reRenderActivity();
         }
 
         public void startSummaryActivity(String tripId) {
             Intent intent = new Intent(getBaseContext(), TripSummaryActivity.class);
             intent.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, tripId);
+            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         }
 
@@ -632,7 +602,7 @@ public class TripActivity extends AppCompatActivity {
             Intent showTaskIntent = new Intent(getApplicationContext(), TripActivity.class);
             showTaskIntent.setAction(Intent.ACTION_MAIN);
             showTaskIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-            showTaskIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            showTaskIntent.addFlags(FLAG_ACTIVITY_NEW_TASK);
 
             PendingIntent contentIntent = PendingIntent.getActivity(
                     getApplicationContext(),
@@ -653,49 +623,6 @@ public class TripActivity extends AppCompatActivity {
             Toast toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
             toast.setGravity(Gravity.CENTER_VERTICAL|Gravity.CENTER, 0, 0);
             toast.show();
-        }
-
-        public WindowManager getWindowManager() {
-            return (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        }
-
-        public static final int MEDIA_TYPE_VIDEO = 2;
-
-        private static String getOutputMediaFilePath(int type){
-            return getOutputMediaFile(type).getAbsolutePath();
-        }
-
-        private static File getOutputMediaFile(int type){
-            // To be safe, you should check that the SDCard is mounted
-            // using Environment.getExternalStorageState() before doing this.
-
-            File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES), TAG);
-            // This location works best if you want the created images to be shared
-            // between applications and persist after your app has been uninstalled.
-
-            // Create the storage directory if it does not exist
-            if (! mediaStorageDir.exists()){
-                if (! mediaStorageDir.mkdirs()){
-                    Log.d(TAG, "failed to create directory");
-                    return null;
-                }
-            }
-
-            // Create a media file name
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            File mediaFile;
-            if (type == MEDIA_TYPE_IMAGE){
-                mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                        "IMG_"+ timeStamp + ".jpg");
-            } else if(type == MEDIA_TYPE_VIDEO) {
-                mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                        "VID_"+ timeStamp + ".mp4");
-            } else {
-                return null;
-            }
-
-            return mediaFile;
         }
 
     }

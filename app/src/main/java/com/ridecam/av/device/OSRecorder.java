@@ -2,6 +2,7 @@ package com.ridecam.av.device;
 
 import android.hardware.Camera;
 import android.media.MediaRecorder;
+import android.provider.MediaStore;
 
 import java.io.IOException;
 
@@ -17,11 +18,24 @@ public class OSRecorder implements RecorderDevice {
         mRecorder = mediaRecorder;
     }
 
+    public void setOnInfoListener(final OnInfoListener onInfoListener) {
+        mRecorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
+            @Override
+            public void onInfo(MediaRecorder mediaRecorder, int what, int extra) {
+                // Only call back for duration and size reached callbacks
+                if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED ||
+                        what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+                    onInfoListener.onInfo(OSRecorder.this, what, extra);
+                }
+            }
+        });
+    }
+
     public void setOnErrorListener(final OnErrorListener onErrorListener) {
         mRecorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
             @Override
             public void onError(MediaRecorder mediaRecorder, int errorType, int errorCode) {
-                onErrorListener.onError(new OSRecorder(mRecorder), errorType, errorCode);
+                onErrorListener.onError(OSRecorder.this, errorType, errorCode);
             }
         });
     }

@@ -4,7 +4,9 @@ import com.ridecam.av.device.CameraDevice;
 import com.ridecam.av.device.RecorderDevice;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 public class SamsungRecorder implements RecorderDevice {
 
@@ -22,8 +24,48 @@ public class SamsungRecorder implements RecorderDevice {
         }
     }
 
+    public void setOnInfoListener(final OnInfoListener onInfoListener) {
+        try {
+            Class<?> samsungInfoListenerInterface = Class.forName("com.sec.android.secmediarecorder.SecMediaRecorder$OnInfoListener");
+            Object proxyListener = Proxy.newProxyInstance(samsungInfoListenerInterface.getClassLoader(),
+                    new Class<?>[]{samsungInfoListenerInterface}, new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                            if (method.getName().equals("onInfo")) {
+                                // Only call back for duration and size reached callbacks
+                                if ((int)args[1] == (int)Utils.getFieldValue("com.sec.android.secmediarecorder.SecMediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED") ||
+                                        (int)args[1] == (int)Utils.getFieldValue("com.sec.android.secmediarecorder.SecMediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED")) {
+                                    onInfoListener.onInfo(SamsungRecorder.this, (int)args[1], (int)args[2]);
+                                }
+                            }
+                            return null;
+                        }
+                    });
+            Method setOnInfoListenerMethod = klass().getDeclaredMethod("setOnInfoListener", samsungInfoListenerInterface);
+            setOnInfoListenerMethod.invoke(mRecorder, proxyListener);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setOnErrorListener(final OnErrorListener onErrorListener) {
-        // TODO
+        try {
+            Class<?> samsungErrorListenerInterface = Class.forName("com.sec.android.secmediarecorder.SecMediaRecorder$OnErrorListener");
+            Object proxyListener = Proxy.newProxyInstance(samsungErrorListenerInterface.getClassLoader(),
+                    new Class<?>[]{samsungErrorListenerInterface}, new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                            if (method.getName().equals("onError")) {
+                                onErrorListener.onError(SamsungRecorder.this, (int) args[1], (int) args[2]);
+                            }
+                            return null;
+                        }
+                    });
+            Method setOnErrorListenerMethod = klass().getDeclaredMethod("setOnErrorListener", samsungErrorListenerInterface);
+            setOnErrorListenerMethod.invoke(mRecorder, proxyListener);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void setOrientationHint(int orientationHint) {

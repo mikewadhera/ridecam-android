@@ -4,6 +4,10 @@ import java.io.IOException;
 
 public interface RecorderDevice {
 
+    public interface OnInfoListener {
+        public void onInfo(RecorderDevice mediaRecorder, int what, int extra);
+    }
+
     public interface OnErrorListener {
         public void onError(RecorderDevice mediaRecorder, int errorType, int errorCode);
     }
@@ -20,6 +24,7 @@ public interface RecorderDevice {
         public static final int H264 = 2;
     }
 
+    public void setOnInfoListener(OnInfoListener infoListener);
     public void setOnErrorListener(OnErrorListener errorListener);
     public void setCamera(CameraDevice cameraDevice);
     public void setOrientationHint(int orientationHint);

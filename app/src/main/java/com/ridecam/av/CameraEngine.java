@@ -15,19 +15,24 @@ import static com.ridecam.TripActivity.sCachedSurfaceTexture;
 
 public class CameraEngine {
 
+    public interface ErrorListener {
+        void onCameraError();
+    }
+
     private static final String TAG = "CameraEngine";
 
     private Context mContext;
     private SurfaceTexture mSurfaceTexture;
     private CameraDevice mCamera;
     private boolean mAcquiringCameraLock;
+    private ErrorListener mErrorListener;
 
     public CameraEngine(Context context, SurfaceTexture surfaceTexture) {
         mContext = context;
         mSurfaceTexture = surfaceTexture;
     }
 
-    public static boolean usingSamsungCameraEngine() {
+    public static boolean usingSamsungCamera() {
         return (SamsungCamera.isAvailable() && !Knobs.FORCE_NATIVE_CAMERA);
     }
 
@@ -41,7 +46,7 @@ public class CameraEngine {
             try {
                 if (sCachedSurfaceTexture != null) {
 
-                    if (usingSamsungCameraEngine()) {
+                    if (usingSamsungCamera()) {
                         mCamera = SamsungCamera.open();
                     } else {
                         mCamera = OSCamera.open();
@@ -50,7 +55,7 @@ public class CameraEngine {
                     mCamera.setErrorCallback(new CameraDevice.ErrorCallback() {
                         @Override
                         public void onError(int errorType, CameraDevice camera) {
-                            onCameraError(errorType);
+                        onCameraError(errorType);
                         }
                     });
                     setCameraDisplayOrientation(mCamera);
@@ -94,8 +99,12 @@ public class CameraEngine {
         mAcquiringCameraLock = false; // just to be safe
     }
 
-    public void lockCamera() {
+    public void unlockCamera() {
+        mCamera.unlock();
+    }
 
+    public void lockCamera() {
+        mCamera.lock();
     }
 
     public CameraDevice getDevice() {
@@ -105,6 +114,9 @@ public class CameraEngine {
     public void onCameraError(int errorType) {
         Log.e(TAG, "!!!!!!! onCameraError errorType: " + errorType);
         // TODO add logging
+        if (mErrorListener != null) {
+            mErrorListener.onCameraError();
+        }
     }
 
     public void setCameraDisplayOrientation(CameraDevice camera) {
@@ -122,5 +134,9 @@ public class CameraEngine {
         result = (info.getOrientation() - degrees + 360) % 360;
         Log.d(TAG, "Adjusting preview orientation degrees: " + String.valueOf(result));
         camera.setDisplayOrientation(result);
+    }
+
+    public void setErrorListener(ErrorListener errorListener) {
+        mErrorListener = errorListener;
     }
 }
