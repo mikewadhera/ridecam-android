@@ -53,6 +53,7 @@ public class TripActivity extends AppCompatActivity {
     public static int sTextureViewHeight;
 
     private BroadcastReceiver mReRenderReceiver;
+    private boolean mToggleLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -198,8 +199,16 @@ public class TripActivity extends AppCompatActivity {
 
     public void toggleRecording() {
         if (hasPermissions()) {
+            if (mToggleLock) return;
+            mToggleLock = true;
             Intent intent = new Intent(TripActivity.this, CameraService.class);
             intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_TOGGLE_TRIP);
+            intent.putExtra(CameraService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+                @Override
+                protected void onReceiveResult(int code, Bundle data) {
+                    mToggleLock = false;
+                }
+            });
             startService(intent);
         } else {
             // TODO add logging
@@ -456,6 +465,8 @@ public class TripActivity extends AppCompatActivity {
                 case COMMAND_TOGGLE_TRIP:
                     toggleTrip();
                     reRenderActivity();
+                    receiver = intent.getParcelableExtra(RESULT_RECEIVER);
+                    receiver.send(0, null);
                     break;
 
                 case COMMAND_IS_TRIP_IN_PROGRESS:
