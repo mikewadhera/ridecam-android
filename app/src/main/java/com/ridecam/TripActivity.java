@@ -474,7 +474,7 @@ public class TripActivity extends AppCompatActivity {
                     mRecorder.setErrorListener(this);
                     mRecorder.startRecording();
                     if (mRecorder.isRecording()) {
-                        flash("Trip Started");
+                        flash("Recording");
                         showForegroundNotification("Recording");
                         String tripId = Trip.allocateId();
                         mTrip = new Trip(tripId);
@@ -483,7 +483,7 @@ public class TripActivity extends AppCompatActivity {
                             mTrip.addCoordinate(mLastCoordinate);
                         }
                     } else {
-                        flash("Trip Failed to Start");
+                        flash("Unable to Start Record");
                         showForegroundNotification("Recording Failed");
                         // TODO add logging
                     }
@@ -542,12 +542,20 @@ public class TripActivity extends AppCompatActivity {
 
         public void startLocationUpdates() {
             mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Knobs.GPS_MIN_TIME_CHANGE_MS, Knobs.GPS_MIN_DISTANCE_CHANGE_M, this);
+            try {
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Knobs.GPS_MIN_TIME_CHANGE_MS, Knobs.GPS_MIN_DISTANCE_CHANGE_M, this);
+            } catch (SecurityException e) {
+                // TODO add logging
+            }
         }
 
         public void stopLocationUpdates() {
             if (mLocationManager != null) {
-                mLocationManager.removeUpdates(this);
+                try {
+                    mLocationManager.removeUpdates(this);
+                } catch (SecurityException e) {
+                    // TODO add logging
+                }
                 mLocationManager = null;
             }
         }
