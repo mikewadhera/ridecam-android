@@ -1,5 +1,6 @@
 package com.ridecam.fs;
 
+import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
@@ -10,9 +11,8 @@ public class FSUtils {
 
     private static final String TAG = "FSUtils";
 
-    public static File getVideoDirectory() {
-        File mediaStorageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        return mediaStorageDir;
+    public static File getVideoDirectory(Context context) {
+        return context.getFilesDir();
     }
 
     public static long freeBytesAvailable(String path) {

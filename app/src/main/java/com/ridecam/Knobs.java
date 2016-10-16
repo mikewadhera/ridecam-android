@@ -1,5 +1,7 @@
 package com.ridecam;
 
+import android.content.Context;
+
 import com.ridecam.fs.FSUtils;
 
 public class Knobs {
@@ -26,9 +28,9 @@ public class Knobs {
 
     public static final int GPS_MIN_DISTANCE_CHANGE_M = 20; // 20 meters
 
-    public static int getMaximumRecordingFileSizeBytes() {
+    public static int getMaximumRecordingFileSizeBytes(Context context) {
         double factor = 0.9; // 90%
-        return (int)Math.floor(factor * FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory().getPath()));
+        return (int)Math.floor(factor * FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(context).getPath()));
     }
 
 }

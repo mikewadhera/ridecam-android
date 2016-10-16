@@ -1,5 +1,6 @@
 package com.ridecam.av;
 
+import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
@@ -7,6 +8,7 @@ import com.ridecam.Knobs;
 import com.ridecam.av.device.OSRecorder;
 import com.ridecam.av.device.RecorderDevice;
 import com.ridecam.av.device.vendor.SamsungDualRecorder;
+import com.ridecam.fs.FSUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,13 +25,17 @@ public class RecorderEngine {
 
     private static final String TAG = "RecorderEngine";
 
+    private Context mContext;
     private CameraEngine mCameraEngine;
+    private String mFilename;
     private RecorderDevice mRecorder;
     private boolean mRecordingLock;
     private ErrorListener mErrorListener;
 
-    public RecorderEngine(CameraEngine cameraEngine) {
+    public RecorderEngine(Context context, CameraEngine cameraEngine, String filename) {
+        mContext = context;
         mCameraEngine = cameraEngine;
+        mFilename = filename;
     }
 
     public boolean isRecording() {
@@ -54,7 +60,7 @@ public class RecorderEngine {
             mRecorder.setOnInfoListener(new RecorderDevice.OnInfoListener() {
                 @Override
                 public void onInfo(RecorderDevice mediaRecorder, int what, int extra) {
-                    onRecorderInfo(what, extra);
+                onRecorderInfo(what, extra);
                 }
             });
             mRecorder.setOnErrorListener(new RecorderDevice.OnErrorListener() {
@@ -90,11 +96,12 @@ public class RecorderEngine {
             mRecorder.setVideoEncoder(OSRecorder.VideoEncoder.H264);
 
             Log.d(TAG, "R: Setting max outputs");
-            mRecorder.setMaxFileSize(Knobs.getMaximumRecordingFileSizeBytes());
+            mRecorder.setMaxFileSize(Knobs.getMaximumRecordingFileSizeBytes(mContext));
             mRecorder.setMaxDuration(Knobs.MAX_REC_LENGTH_MS);
 
             Log.d(TAG, "R: Setting output file");
-            mRecorder.setOutputFile(getOutputMediaFilePath(MEDIA_TYPE_VIDEO));
+            File file = new File(FSUtils.getVideoDirectory(mContext) + File.separator + mFilename + ".mp4");
+            mRecorder.setOutputFile(file.getAbsolutePath());
 
             Log.d(TAG, "R: Prepare");
             try {
@@ -206,45 +213,6 @@ public class RecorderEngine {
 
     public void setErrorListener(ErrorListener errorListener) {
         mErrorListener = errorListener;
-    }
-
-    public static final int MEDIA_TYPE_VIDEO = 2;
-
-    private static String getOutputMediaFilePath(int type){
-        return getOutputMediaFile(type).getAbsolutePath();
-    }
-
-    private static File getOutputMediaFile(int type){
-        // To be safe, you should check that the SDCard is mounted
-        // using Environment.getExternalStorageState() before doing this.
-
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), TAG);
-        // This location works best if you want the created images to be shared
-        // between applications and persist after your app has been uninstalled.
-
-        // Create the storage directory if it does not exist
-        if (! mediaStorageDir.exists()){
-            if (! mediaStorageDir.mkdirs()){
-                Log.d(TAG, "failed to create directory");
-                return null;
-            }
-        }
-
-        // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File mediaFile;
-        if (type == MEDIA_TYPE_IMAGE){
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "IMG_"+ timeStamp + ".jpg");
-        } else if(type == MEDIA_TYPE_VIDEO) {
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "VID_"+ timeStamp + ".mp4");
-        } else {
-            return null;
-        }
-
-        return mediaFile;
     }
 
 }

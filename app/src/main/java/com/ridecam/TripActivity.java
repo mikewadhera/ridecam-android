@@ -215,7 +215,7 @@ public class TripActivity extends AppCompatActivity {
         final View previewView = findViewById(R.id.record_frame);
         final TextView capacityView = (TextView)findViewById(R.id.record_capacity);
 
-        final int capacityHours = AVUtils.estimateVideoDurationHours(Knobs.REC_BITRATE, Knobs.getMaximumRecordingFileSizeBytes());
+        final int capacityHours = AVUtils.estimateVideoDurationHours(Knobs.REC_BITRATE, Knobs.getMaximumRecordingFileSizeBytes(this));
         capacityView.setText(capacityHours + "HRS");
 
         Intent intent = new Intent(this, CameraService.class);
@@ -481,14 +481,13 @@ public class TripActivity extends AppCompatActivity {
 
         public void startTrip() {
             if (mCameraEngine != null) {
-                mRecorder = new RecorderEngine(mCameraEngine);
-
+                String tripId = Trip.allocateId();
+                mRecorder = new RecorderEngine(this, mCameraEngine, tripId);
                 mRecorder.setErrorListener(this);
                 mRecorder.startRecording();
                 if (mRecorder.isRecording()) {
                     flash("Recording");
                     showForegroundNotification("Recording");
-                    String tripId = Trip.allocateId();
                     mTrip = new Trip(tripId);
                     mTrip.setStartTimestamp(System.currentTimeMillis());
                     if (mLastCoordinate != null) {
