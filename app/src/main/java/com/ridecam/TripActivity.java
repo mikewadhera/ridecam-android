@@ -531,10 +531,7 @@ public class TripActivity extends AppCompatActivity {
             // TODO add logging
             flash("Camera Error");
             mTrip = null;
-            Intent intent = new Intent(getApplicationContext(), TripActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            getApplicationContext().startActivity(intent);
-            reRenderActivity(); // in case activity already foregrounded
+            foregroundTripActivity();
         }
 
         @Override
@@ -542,10 +539,7 @@ public class TripActivity extends AppCompatActivity {
             // TODO add logging
             flash("Trip Stopped (Error)");
             mTrip = null;
-            Intent intent = new Intent(getApplicationContext(), TripActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            getApplicationContext().startActivity(intent);
-            reRenderActivity(); // in case activity already foregrounded
+            foregroundTripActivity();
         }
 
         public void startSummaryActivity(String tripId) {
@@ -553,6 +547,13 @@ public class TripActivity extends AppCompatActivity {
             intent.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, tripId);
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+        }
+
+        public void foregroundTripActivity() {
+            Intent intent = new Intent(getApplicationContext(), TripActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            getApplicationContext().startActivity(intent);
+            reRenderActivity(); // in case activity already foregrounded
         }
 
         public void startLocationUpdates() {
