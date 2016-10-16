@@ -12,9 +12,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -36,7 +33,6 @@ import com.ridecam.av.AVUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
 import com.ridecam.geo.GPSEngine;
-import com.ridecam.geo.ReverseGeocoder;
 import com.ridecam.model.Trip;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
@@ -117,8 +113,8 @@ public class TripActivity extends AppCompatActivity {
                         sTextureViewWidth = surfaceWidth;
                         sTextureViewHeight = surfaceHeight;
                         manuallyRotatePreviewIfNeeded();
-                        Intent intent = new Intent(TripActivity.this, CameraService.class);
-                        intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
+                        Intent intent = new Intent(TripActivity.this, TripService.class);
+                        intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                         startService(intent);
                         render();
                     }
@@ -154,8 +150,8 @@ public class TripActivity extends AppCompatActivity {
                 }
 
                 manuallyRotatePreviewIfNeeded();
-                Intent intent = new Intent(this, CameraService.class);
-                intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONRESUME);
+                Intent intent = new Intent(this, TripService.class);
+                intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                 startService(intent);
                 render();
 
@@ -170,8 +166,8 @@ public class TripActivity extends AppCompatActivity {
 
         // Stopping from pushing home button, starting another activity or dialog
 
-        Intent intent = new Intent(this, CameraService.class);
-        intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_ACTIVITY_ONSTOP);
+        Intent intent = new Intent(this, TripService.class);
+        intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONSTOP);
         startService(intent);
 
         // Unregister for re-render events from service
@@ -201,9 +197,9 @@ public class TripActivity extends AppCompatActivity {
         if (hasPermissions()) {
             if (mToggleLock) return;
             mToggleLock = true;
-            Intent intent = new Intent(TripActivity.this, CameraService.class);
-            intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_TOGGLE_TRIP);
-            intent.putExtra(CameraService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+            Intent intent = new Intent(TripActivity.this, TripService.class);
+            intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_TOGGLE_TRIP);
+            intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
                 @Override
                 protected void onReceiveResult(int code, Bundle data) {
                     mToggleLock = false;
@@ -227,12 +223,12 @@ public class TripActivity extends AppCompatActivity {
         final int capacityHours = AVUtils.estimateVideoDurationHours(Knobs.REC_BITRATE, Knobs.getMaximumRecordingFileSizeBytes(this));
         capacityView.setText(capacityHours + "HRS");
 
-        Intent intent = new Intent(this, CameraService.class);
-        intent.putExtra(CameraService.START_SERVICE_COMMAND, CameraService.COMMAND_IS_TRIP_IN_PROGRESS);
-        intent.putExtra(CameraService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+        Intent intent = new Intent(this, TripService.class);
+        intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
+        intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
             @Override
             protected void onReceiveResult(int code, Bundle data) {
-                boolean isTripInProgress = data.getBoolean(CameraService.RESULT_IS_TRIP_IN_PROGRESS);
+                boolean isTripInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
                 if (isTripInProgress) {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
                     buttonView.setText("FINISH");
@@ -275,10 +271,8 @@ public class TripActivity extends AppCompatActivity {
                 ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
         boolean hasGps =
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-        boolean hasStorage =
-                ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
 
-        return hasCam && hasGps && hasStorage;
+        return hasCam && hasGps;
     }
 
     public void pauseToRequestPermissionsDialog() {
@@ -287,8 +281,7 @@ public class TripActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this,
                 new String[]{
                         Manifest.permission.CAMERA,
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        Manifest.permission.ACCESS_FINE_LOCATION
                 },
                 1);
     }
@@ -320,9 +313,9 @@ public class TripActivity extends AppCompatActivity {
     }
 
 
-    public static class CameraService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
+    public static class TripService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
 
-        private static final String TAG = "CameraService";
+        private static final String TAG = "TripService";
 
         private static final int NOTIFICATION_ID = 1;
 
@@ -343,7 +336,7 @@ public class TripActivity extends AppCompatActivity {
         private Trip.Coordinate mLastCoordinate;
         private Trip mTrip;
 
-        public CameraService() {
+        public TripService() {
         }
 
         @Override
@@ -356,7 +349,7 @@ public class TripActivity extends AppCompatActivity {
 
         @Override
         public void onDestroy() {
-            Log.d(TAG, "CameraService onDestroy");
+            Log.d(TAG, "TripService onDestroy");
 
             // By design this should not be called much / only when app is killed
 
@@ -444,7 +437,7 @@ public class TripActivity extends AppCompatActivity {
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-            Log.d(TAG, "CameraService onStartCommand");
+            Log.d(TAG, "TripService onStartCommand");
 
             if (intent == null) {
                 Log.e(TAG, "Cannot start service with null intent");
