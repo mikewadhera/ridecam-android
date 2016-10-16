@@ -1,5 +1,6 @@
 package com.ridecam;
 
+import android.app.AlarmManager;
 import android.content.Context;
 
 import com.ridecam.fs.FSUtils;
@@ -28,8 +29,12 @@ public class Knobs {
 
     public static final int GPS_MIN_DISTANCE_CHANGE_M = 20; // 20 meters
 
+    public static final int LOW_STORAGE_FLOOR_BYTES = 157286400; // 30 minutes (150MB)
+
+    public static final long LOW_STORAGE_ALARM_INTERVAL = AlarmManager.INTERVAL_FIFTEEN_MINUTES; // Must be AM constant
+
     public static int getMaximumRecordingFileSizeBytes(Context context) {
-        double factor = 0.9; // 90%
+        double factor = 0.95; // 95%
         return (int)Math.floor(factor * FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(context).getPath()));
     }
 

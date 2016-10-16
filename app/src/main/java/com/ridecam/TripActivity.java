@@ -1,6 +1,7 @@
 package com.ridecam;
 
 import android.Manifest;
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -32,6 +33,7 @@ import android.widget.Toast;
 import com.ridecam.av.AVUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
+import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.GPSEngine;
 import com.ridecam.model.Trip;
 
@@ -319,14 +321,15 @@ public class TripActivity extends AppCompatActivity {
 
         private static final int NOTIFICATION_ID = 1;
 
-        private static final String START_SERVICE_COMMAND = "startServiceCommands";
-        private static final int COMMAND_NONE = -1;
-        private static final int COMMAND_ACTIVITY_ONRESUME = 0;
-        private static final int COMMAND_ACTIVITY_ONSTOP = 1;
-        private static final int COMMAND_TOGGLE_TRIP = 2;
-        private static final int COMMAND_IS_TRIP_IN_PROGRESS = 3;
+        public static final String START_SERVICE_COMMAND = "startServiceCommands";
+        public static final int COMMAND_NONE = -1;
+        public static final int COMMAND_ACTIVITY_ONRESUME = 0;
+        public static final int COMMAND_ACTIVITY_ONSTOP = 1;
+        public static final int COMMAND_TOGGLE_TRIP = 2;
+        public static final int COMMAND_IS_TRIP_IN_PROGRESS = 3;
+        public static final int COMMAND_ALARM_LOW_STORAGE = 4;
 
-        private static final String RESULT_IS_TRIP_IN_PROGRESS = "isTripInProgressResult";
+        public static final String RESULT_IS_TRIP_IN_PROGRESS = "isTripInProgressResult";
 
         public static final String RESULT_RECEIVER = "resultReceiver";
 
@@ -335,6 +338,7 @@ public class TripActivity extends AppCompatActivity {
         private GPSEngine mGPSEngine;
         private Trip.Coordinate mLastCoordinate;
         private Trip mTrip;
+        private PendingIntent mLowStorageAlarmIntent;
 
         public TripService() {
         }
@@ -395,6 +399,21 @@ public class TripActivity extends AppCompatActivity {
             if (!isTripInProgress()) {
                 releaseCamera();
                 stopLocationUpdates();
+            }
+        }
+
+        // Alarm callbacks
+
+        public void handleLowStorageCheck() {
+            Log.d(TAG, "Checking storage...");
+            if (isTripInProgress()) {
+                long freeBytes = FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(this).getAbsolutePath());
+                boolean hasLowStorage = freeBytes < Knobs.LOW_STORAGE_FLOOR_BYTES;
+                Log.d(TAG, "Free bytes: " + freeBytes);
+                if (hasLowStorage) {
+                    Log.d(TAG, "Under LOW_STORAGE_FLOOR_BYTES");
+                    onLowStorageError();
+                }
             }
         }
 
@@ -470,6 +489,10 @@ public class TripActivity extends AppCompatActivity {
                     receiver.send(0, bundle);
                     break;
 
+                case COMMAND_ALARM_LOW_STORAGE:
+                    handleLowStorageCheck();
+                    break;
+
                 default:
                     // TODO add logging
                     Log.e(TAG, "Cannot start service with illegal commands");
@@ -497,6 +520,7 @@ public class TripActivity extends AppCompatActivity {
                     if (mLastCoordinate != null) {
                         mTrip.addCoordinate(mLastCoordinate);
                     }
+                    startLowStorageAlarm();
                 } else {
                     flash("Unable to Start Record");
                     showForegroundNotification("Recording Failed");
@@ -512,6 +536,7 @@ public class TripActivity extends AppCompatActivity {
                 mRecorder.stopRecording();
                 if (!mRecorder.isRecording()) {
                     mRecorder = null;
+                    stopLowStorageAlarm();
                     showForegroundNotification("Finished Recording");
                     if (mTrip != null) {
                         mTrip.setEndTimestamp(System.currentTimeMillis());
@@ -530,19 +555,45 @@ public class TripActivity extends AppCompatActivity {
             }
         }
 
+        public void startLowStorageAlarm() {
+            // Set a repeating alarm that wakes up the device
+            // Sends low storage check command to ourself
+            // Fires first after 5 seconds and then a pre-defined OS interval from then
+            // We use 5 seconds rather than 0 to allow recorder to fully start up
+            Intent intent = new Intent(this, TripService.class);
+            intent.putExtra(START_SERVICE_COMMAND, COMMAND_ALARM_LOW_STORAGE);
+            mLowStorageAlarmIntent = PendingIntent.getService(this, 1, intent, 0);
+            getAlarmManager().setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 5*1000,
+                     Knobs.LOW_STORAGE_ALARM_INTERVAL, mLowStorageAlarmIntent);
+            Log.d(TAG, "Started Alarm");
+        }
+
+        public void stopLowStorageAlarm() {
+            if (mLowStorageAlarmIntent != null) {
+                getAlarmManager().cancel(mLowStorageAlarmIntent);
+                Log.d(TAG, "Stopped Alarm");
+            }
+        }
+
         @Override
         public void onCameraError() {
             // TODO add logging
             flash("Camera Error");
-            mTrip = null;
             foregroundTripActivity();
         }
 
         @Override
         public void onRecorderError() {
             // TODO add logging
+            stopTrip();
             flash("Trip Stopped (Error)");
-            mTrip = null;
+            foregroundTripActivity();
+        }
+
+        public void onLowStorageError() {
+            // TODO add logging
+            stopTrip();
+            flash("Trip Stopped (Low Storage)");
             foregroundTripActivity();
         }
 
@@ -612,6 +663,10 @@ public class TripActivity extends AppCompatActivity {
             Toast toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
             toast.setGravity(Gravity.CENTER_VERTICAL|Gravity.CENTER, 0, 0);
             toast.show();
+        }
+
+        private AlarmManager getAlarmManager() {
+            return (AlarmManager)getSystemService(Context.ALARM_SERVICE);
         }
 
     }
