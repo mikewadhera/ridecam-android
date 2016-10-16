@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
 
 import android.util.Pair;
 
-public class SamsungCamera implements CameraDevice<Object> {
+public class SamsungDualCamera implements CameraDevice<Object> {
 
     private static final int CAMERA_ID = 10;
 
@@ -32,7 +32,7 @@ public class SamsungCamera implements CameraDevice<Object> {
             Class<?> secCamera = Class.forName("com.sec.android.seccamera.SecCamera");
             Method open = secCamera.getDeclaredMethod("open", Integer.TYPE);
             Object camera = open.invoke(null, CAMERA_ID);
-            SamsungCamera samsungCamera = new SamsungCamera(camera);
+            SamsungDualCamera samsungCamera = new SamsungDualCamera(camera);
             samsungCamera.enableDualEffect();
             return samsungCamera;
         } catch (Exception e) {
@@ -41,7 +41,7 @@ public class SamsungCamera implements CameraDevice<Object> {
         return null;
     }
 
-    public SamsungCamera(Object camera) {
+    public SamsungDualCamera(Object camera) {
         mCamera = camera;
     }
 
@@ -238,12 +238,12 @@ public class SamsungCamera implements CameraDevice<Object> {
         }
     }
 
-    public SamsungCamera.CameraInfo getCameraInfo() {
+    public SamsungDualCamera.CameraInfo getCameraInfo() {
         try {
             Object cameraInfo = CameraInfo.klass().newInstance();
             Method getCameraInfoMethod = klass().getDeclaredMethod("getCameraInfo", Integer.TYPE, CameraInfo.klass());
             getCameraInfoMethod.invoke(null, 0, cameraInfo);
-            return new SamsungCamera.CameraInfo(cameraInfo);
+            return new SamsungDualCamera.CameraInfo(cameraInfo);
         } catch (Exception e) {
             e.printStackTrace();
         }

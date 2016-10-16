@@ -9,7 +9,7 @@ import android.view.WindowManager;
 import com.ridecam.Knobs;
 import com.ridecam.av.device.CameraDevice;
 import com.ridecam.av.device.OSCamera;
-import com.ridecam.av.device.vendor.SamsungCamera;
+import com.ridecam.av.device.vendor.SamsungDualCamera;
 
 import static com.ridecam.TripActivity.sCachedSurfaceTexture;
 
@@ -32,8 +32,8 @@ public class CameraEngine {
         mSurfaceTexture = surfaceTexture;
     }
 
-    public static boolean usingSamsungCamera() {
-        return (SamsungCamera.isAvailable() && !Knobs.FORCE_NATIVE_CAMERA);
+    public static boolean usingSamsungDualCamera() {
+        return (SamsungDualCamera.isAvailable() && !Knobs.FORCE_NATIVE_CAMERA);
     }
 
     public void acquireCamera() {
@@ -46,8 +46,8 @@ public class CameraEngine {
             try {
                 if (sCachedSurfaceTexture != null) {
 
-                    if (usingSamsungCamera()) {
-                        mCamera = SamsungCamera.open();
+                    if (usingSamsungDualCamera()) {
+                        mCamera = SamsungDualCamera.open();
                     } else {
                         mCamera = OSCamera.open();
                     }

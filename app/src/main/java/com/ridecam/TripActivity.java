@@ -231,7 +231,7 @@ public class TripActivity extends AppCompatActivity {
     }
 
     private void manuallyRotatePreviewIfNeeded(int width, int height) {
-        if (CameraEngine.usingSamsungCamera()) {
+        if (CameraEngine.usingSamsungDualCamera()) {
             Matrix matrix = new Matrix();
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             RectF textureRectF = new RectF(0, 0, width, height);

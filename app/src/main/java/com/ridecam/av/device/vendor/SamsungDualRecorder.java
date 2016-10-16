@@ -8,15 +8,15 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-public class SamsungRecorder implements RecorderDevice {
+public class SamsungDualRecorder implements RecorderDevice {
 
     private Object mRecorder; // com.sec.android.secmediarecorder.SecMediaRecorder
 
-    public SamsungRecorder(Object recorder) {
+    public SamsungDualRecorder(Object recorder) {
         mRecorder = recorder;
     }
 
-    public SamsungRecorder() {
+    public SamsungDualRecorder() {
         try {
             mRecorder = Class.forName("com.sec.android.secmediarecorder.SecMediaRecorder").newInstance();
         } catch (Exception e) {
@@ -35,7 +35,7 @@ public class SamsungRecorder implements RecorderDevice {
                                 // Only call back for duration and size reached callbacks
                                 if ((int)args[1] == (int)Utils.getFieldValue("com.sec.android.secmediarecorder.SecMediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED") ||
                                         (int)args[1] == (int)Utils.getFieldValue("com.sec.android.secmediarecorder.SecMediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED")) {
-                                    onInfoListener.onInfo(SamsungRecorder.this, (int)args[1], (int)args[2]);
+                                    onInfoListener.onInfo(SamsungDualRecorder.this, (int)args[1], (int)args[2]);
                                 }
                             }
                             return null;
@@ -56,7 +56,7 @@ public class SamsungRecorder implements RecorderDevice {
                         @Override
                         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                             if (method.getName().equals("onError")) {
-                                onErrorListener.onError(SamsungRecorder.this, (int) args[1], (int) args[2]);
+                                onErrorListener.onError(SamsungDualRecorder.this, (int) args[1], (int) args[2]);
                             }
                             return null;
                         }
@@ -86,7 +86,7 @@ public class SamsungRecorder implements RecorderDevice {
 
     public void registerRecordingSurface(CameraDevice camera) {
         try {
-            Method setRecordingSurfaceMethod = klass().getDeclaredMethod("registerRecordingSurface", SamsungCamera.klass());
+            Method setRecordingSurfaceMethod = klass().getDeclaredMethod("registerRecordingSurface", SamsungDualCamera.klass());
             setRecordingSurfaceMethod.invoke(mRecorder, camera.getUnderlyingCamera());
         } catch (Exception e) {
             e.printStackTrace();
@@ -95,7 +95,7 @@ public class SamsungRecorder implements RecorderDevice {
 
     public void unregisterRecordingSurface(CameraDevice camera) {
         try {
-            Method unsetRecordingSurfaceMethod = klass().getDeclaredMethod("unregisterRecordingSurface", SamsungCamera.klass());
+            Method unsetRecordingSurfaceMethod = klass().getDeclaredMethod("unregisterRecordingSurface", SamsungDualCamera.klass());
             unsetRecordingSurfaceMethod.invoke(mRecorder, camera.getUnderlyingCamera());
         } catch (Exception e) {
             e.printStackTrace();

@@ -6,7 +6,7 @@ import android.util.Log;
 import com.ridecam.Knobs;
 import com.ridecam.av.device.OSRecorder;
 import com.ridecam.av.device.RecorderDevice;
-import com.ridecam.av.device.vendor.SamsungRecorder;
+import com.ridecam.av.device.vendor.SamsungDualRecorder;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,8 +45,8 @@ public class RecorderEngine {
         mRecordingLock = true;
 
         try {
-            if (CameraEngine.usingSamsungCamera()) {
-                mRecorder = new SamsungRecorder();
+            if (CameraEngine.usingSamsungDualCamera()) {
+                mRecorder = new SamsungDualRecorder();
             } else {
                 mRecorder = new OSRecorder();
             }
