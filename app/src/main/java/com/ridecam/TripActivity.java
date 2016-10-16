@@ -35,6 +35,7 @@ import android.widget.Toast;
 import com.ridecam.av.AVUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
+import com.ridecam.geo.GPSEngine;
 import com.ridecam.geo.ReverseGeocoder;
 import com.ridecam.model.Trip;
 
@@ -310,7 +311,7 @@ public class TripActivity extends AppCompatActivity {
     }
 
 
-    public static class CameraService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, LocationListener {
+    public static class CameraService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
 
         private static final String TAG = "CameraService";
 
@@ -329,7 +330,7 @@ public class TripActivity extends AppCompatActivity {
 
         private CameraEngine mCameraEngine;
         private RecorderEngine mRecorder;
-        private LocationManager mLocationManager;
+        private GPSEngine mGPSEngine;
         private Trip.Coordinate mLastCoordinate;
         private Trip mTrip;
 
@@ -557,62 +558,23 @@ public class TripActivity extends AppCompatActivity {
         }
 
         public void startLocationUpdates() {
-            mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-            try {
-                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Knobs.GPS_MIN_TIME_CHANGE_MS, Knobs.GPS_MIN_DISTANCE_CHANGE_M, this);
-            } catch (SecurityException e) {
-                // TODO add logging
-            }
+            mGPSEngine = new GPSEngine(this);
+            mGPSEngine.setLocationListener(this);
+            mGPSEngine.startLocationUpdates();
         }
 
         public void stopLocationUpdates() {
-            if (mLocationManager != null) {
-                try {
-                    mLocationManager.removeUpdates(this);
-                } catch (SecurityException e) {
-                    // TODO add logging
-                }
-                mLocationManager = null;
-            }
-        }
-
-        // LocationListener
-        @Override
-        public void onLocationChanged(final Location location) {
-            Intent intent = new Intent(this, ReverseGeocoder.class);
-            intent.putExtra(ReverseGeocoder.LOCATION_DATA_EXTRA, location);
-            intent.putExtra(ReverseGeocoder.RECEIVER, new android.os.ResultReceiver(null) {
-                @Override
-                protected void onReceiveResult(int resultCode, Bundle resultData) {
-                    String result = resultData.getString(ReverseGeocoder.RESULT_DATA_KEY);
-                    onLocationGeocoded(location, result);
-                }
-            });
-            startService(intent);
+            mGPSEngine.stopLocationUpdates();
         }
 
         @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-        }
-
-        public void onLocationGeocoded(Location location, String address) {
+        public void onLocationUpdate(long timestamp, double latitude, double longitude, float bearing, String title) {
             Trip.Coordinate coordinate = new Trip.Coordinate();
-            coordinate.latitude = location.getLatitude();
-            coordinate.longitude = location.getLongitude();
-            coordinate.timestamp = location.getTime();
-            coordinate.bearing = location.getBearing();
-            coordinate.title = address;
+            coordinate.latitude = latitude;
+            coordinate.longitude = longitude;
+            coordinate.timestamp = timestamp;
+            coordinate.bearing = bearing;
+            coordinate.title = title;
             if (mTrip != null) {
                 mTrip.addCoordinate(coordinate);
             } else {
