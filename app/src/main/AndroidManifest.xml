@@ -32,7 +32,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".TripSummaryActivity"
+        <activity android:name="com.ridecam.TripSummaryActivity"
             android:label="Trip"
             android:screenOrientation="portrait">
         </activity>

@@ -2,9 +2,11 @@ package com.ridecam;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.WindowManager;
 
-public class TripSummaryActivity extends Activity {
+public class TripSummaryActivity extends AppCompatActivity {
 
     private static final String TAG = "TripSummaryActivity";
 
@@ -14,7 +16,6 @@ public class TripSummaryActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
-
     }
 
     @Override
