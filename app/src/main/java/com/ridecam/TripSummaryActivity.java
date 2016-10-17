@@ -16,6 +16,8 @@ public class TripSummaryActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
+
+        setTitle(Copy.TRIP_SUMMARY_TITLE);
     }
 
     @Override

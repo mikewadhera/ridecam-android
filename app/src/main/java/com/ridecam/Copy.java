@@ -14,4 +14,6 @@ public class Copy {
 
     public static final String CAMERA_ERROR = "Internal Camera Error";
 
+    public static final String TRIP_SUMMARY_TITLE = "Trip Saved";
+
 }

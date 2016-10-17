@@ -63,9 +63,6 @@ public class TripActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         loadLayout();
-
-        Intent intent = new Intent(this, UploadService.class);
-        startService(intent);
     }
 
     @Override
@@ -109,6 +106,10 @@ public class TripActivity extends AppCompatActivity {
                         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                         startService(intent);
                         render();
+
+                        Intent a = new Intent(TripActivity.this, TripSummaryActivity.class);
+                        a.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, "-KUIbNgK-bb69S9PSSqp");
+                        startActivity(a);
                     }
 
                     @Override
