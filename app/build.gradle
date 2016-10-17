@@ -34,6 +34,7 @@ dependencies {
     compile 'com.google.firebase:firebase-database:9.6.1'
     compile 'com.google.firebase:firebase-storage:9.6.1'
     compile 'com.google.firebase:firebase-crash:9.6.1'
+    compile "commons-io:commons-io:+"
 }
 
 apply plugin: 'com.google.gms.google-services'

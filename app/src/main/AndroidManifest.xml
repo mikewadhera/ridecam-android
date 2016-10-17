@@ -44,6 +44,9 @@
         <service
             android:name="com.ridecam.geo.ReverseGeocoder"
             android:exported="false"/>
+
+        <service android:name="com.ridecam.UploadService"
+            android:exported="false"/>
     </application>
 
 </manifest>

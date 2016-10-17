@@ -76,6 +76,9 @@ public class TripActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         loadLayout();
+
+        Intent intent = new Intent(this, UploadService.class);
+        startService(intent);
     }
 
     @Override

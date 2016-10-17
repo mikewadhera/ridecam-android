@@ -1,7 +1,10 @@
 package com.ridecam.model;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.ridecam.geo.Utils;
 
 import java.util.HashMap;
@@ -83,13 +86,25 @@ public class Trip {
         return Math.round(total);
     }
 
-    public static class SaveCommand {
+    public abstract static class DBCommand {
 
-        private DatabaseReference mDatabase;
+        protected DatabaseReference mTripsRef;
+        protected DatabaseReference mLocationsRef;
+
+        public DBCommand() {
+            DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
+            mTripsRef = rootRef.child("trips");
+            mLocationsRef = rootRef.child("locations");
+        }
+
+    }
+
+    public static class SaveCommand extends DBCommand {
+
         private Trip mTrip;
 
         public SaveCommand(Trip trip) {
-            mDatabase = FirebaseDatabase.getInstance().getReference();
+            super();
             mTrip = trip;
         }
 
@@ -98,9 +113,9 @@ public class Trip {
             tripMap.put("t_start", mTrip.getStartTimestamp());
             tripMap.put("t_end", mTrip.getEndTimestamp());
 
-            mDatabase.child("/trips/" + mTrip.getId()).setValue(tripMap);
+            mTripsRef.child(mTrip.getId()).setValue(tripMap);
 
-            DatabaseReference locationRef = mDatabase.child("/locations/" + mTrip.getId());
+            DatabaseReference locationRef = mLocationsRef.child(mTrip.getId());
             Map<String, Object> coordinateMap;
             for (Coordinate c : mTrip.getCoordinates()) {
                 coordinateMap = new HashMap<>();
@@ -111,6 +126,56 @@ public class Trip {
                 coordinateMap.put("a", c.title);
                 locationRef.push().setValue(coordinateMap);
             }
+        }
+
+    }
+
+    public static class IsRecordingCompleteCommand extends DBCommand {
+
+        public interface ResultListener {
+            public void onResult(boolean isRecordingComplete);
+        }
+
+        private String mId;
+
+        public IsRecordingCompleteCommand(String id) {
+            super();
+            mId = id;
+        }
+
+        public void runAsync(final ResultListener resultListener) {
+            mTripsRef.child(mId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    boolean recordingComplete;
+                    if (dataSnapshot == null) {
+                        recordingComplete = false;
+                    } else {
+                        recordingComplete = dataSnapshot.hasChild("t_end");
+                    }
+                    resultListener.onResult(recordingComplete);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            });
+        }
+
+    }
+
+    public static class SaveTripVideoDownloadURL extends DBCommand {
+
+        private String mId;
+        private String mDownloadUrl;
+
+        public SaveTripVideoDownloadURL(String id, String downloadUrl) {
+            super();
+            mId = id;
+            mDownloadUrl = downloadUrl;
+        }
+
+        public void run() {
+            mTripsRef.child(mId).child("h264_video_url").setValue(mDownloadUrl);
         }
 
     }
