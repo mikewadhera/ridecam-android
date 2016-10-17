@@ -38,7 +38,7 @@
         </activity>
 
         <service
-            android:name="com.ridecam.TripActivity$TripService"
+            android:name="com.ridecam.TripService"
             android:exported="false"/>
 
         <service
