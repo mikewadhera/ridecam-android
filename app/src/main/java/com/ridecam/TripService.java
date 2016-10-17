@@ -221,8 +221,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
-                flash("Recording");
-                showForegroundNotification("Recording");
+                flash(Copy.RIDE_START);
+                showForegroundNotification(Copy.RIDE_START);
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());
                 if (mLastCoordinate != null) {
@@ -230,8 +230,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 }
                 startLowStorageAlarm();
             } else {
-                flash("Unable to Start Record");
-                showForegroundNotification("Recording Failed");
+                flash(Copy.RIDE_START_FAIL);
+                showForegroundNotification(Copy.RIDE_START_FAIL);
                 // TODO add logging
             }
         } else {
@@ -245,7 +245,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             if (!mRecorder.isRecording()) {
                 mRecorder = null;
                 stopLowStorageAlarm();
-                showForegroundNotification("Finished Recording");
+                showForegroundNotification(Copy.RIDE_FINISH);
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
                     DB.Save saveCommand = new DB.Save(mTrip);
@@ -286,7 +286,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     @Override
     public void onCameraError() {
         // TODO add logging
-        flash("Camera Error");
+        flash(Copy.CAMERA_ERROR);
         foregroundTripActivity();
     }
 
@@ -294,14 +294,14 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     public void onRecorderError() {
         // TODO add logging
         stopTrip();
-        flash("Trip Stopped (Error)");
+        flash(Copy.RIDE_INTERRUPTED);
         foregroundTripActivity();
     }
 
     public void onLowStorageError() {
         // TODO add logging
         stopTrip();
-        flash("Trip Stopped (Low Storage)");
+        flash(Copy.RIDE_LOW_STORAGE);
         foregroundTripActivity();
     }
 
