@@ -33,6 +33,7 @@ import android.widget.Toast;
 import com.ridecam.av.AVUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
+import com.ridecam.db.DB;
 import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.GPSEngine;
 import com.ridecam.model.Trip;
@@ -543,7 +544,7 @@ public class TripActivity extends AppCompatActivity {
                     showForegroundNotification("Finished Recording");
                     if (mTrip != null) {
                         mTrip.setEndTimestamp(System.currentTimeMillis());
-                        Trip.SaveCommand saveCommand = new Trip.SaveCommand(mTrip);
+                        DB.Save saveCommand = new DB.Save(mTrip);
                         saveCommand.run();
                         startSummaryActivity(mTrip.getId());
                         mTrip = null;

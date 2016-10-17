@@ -13,8 +13,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.ridecam.db.DB;
 import com.ridecam.fs.FSUtils;
-import com.ridecam.model.Trip;
 
 import java.io.File;
 
@@ -87,7 +87,7 @@ public class UploadService extends Service {
                         String tripId = FSUtils.getBasename(file);
                         String downloadUrl = taskSnapshot.getDownloadUrl().toString();
 
-                        Trip.SaveTripVideoDownloadURL saveTripVideoDownloadURL = new Trip.SaveTripVideoDownloadURL(tripId, downloadUrl);
+                        DB.SaveTripVideoDownloadURL saveTripVideoDownloadURL = new DB.SaveTripVideoDownloadURL(tripId, downloadUrl);
                         saveTripVideoDownloadURL.run();
 
                         Log.e(TAG, "deleteing File");
@@ -111,8 +111,8 @@ public class UploadService extends Service {
         for (final File file : files) {
             String id = FSUtils.getBasename(file);
             if (isNotUploading(id)) {
-                Trip.IsRecordingCompleteCommand isRecordingCompleteCommand = new Trip.IsRecordingCompleteCommand(id);
-                isRecordingCompleteCommand.runAsync(new Trip.IsRecordingCompleteCommand.ResultListener() {
+                DB.IsRecordingComplete isRecordingCompleteCommand = new DB.IsRecordingComplete(id);
+                isRecordingCompleteCommand.runAsync(new DB.IsRecordingComplete.ResultListener() {
                     @Override
                     public void onResult(boolean isRecordingComplete) {
                         if (isRecordingComplete) {
