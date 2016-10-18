@@ -24,10 +24,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.github.vignesh_iopex.confirmdialog.Confirm;
+import com.github.vignesh_iopex.confirmdialog.Dialog;
+import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
 import com.ridecam.TripService;
 import com.ridecam.av.CameraEngine;
+
+import static android.R.attr.data;
 
 public class CameraFragment extends Fragment {
 
@@ -41,7 +46,6 @@ public class CameraFragment extends Fragment {
     public static int sTextureViewHeight;
 
     private View mRootView;
-    private boolean mToggleLock;
     private BroadcastReceiver mReRenderReceiver;
 
     public CameraFragment() {
@@ -176,7 +180,7 @@ public class CameraFragment extends Fragment {
         recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toggleRecording();
+                toggleRecording(true);
             }
         });
 
@@ -190,19 +194,37 @@ public class CameraFragment extends Fragment {
         });
     }
 
-    public void toggleRecording() {
+    public void toggleRecording(final boolean confirmStop) {
         if (hasPermissions(getActivity())) {
-            if (mToggleLock) return;
-            mToggleLock = true;
-            Intent intent = new Intent(getActivity(), TripService.class);
-            intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_TOGGLE_TRIP);
-            intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+            Intent checkInProgressIntent = new Intent(getActivity(), TripService.class);
+            checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
+            checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
                 @Override
                 protected void onReceiveResult(int code, Bundle data) {
-                    mToggleLock = false;
+                    boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
+                    if (isInProgress && confirmStop) {
+                        Confirm.using(getActivity()).ask(Copy.RIDE_STOP_CONFIRM).onPositive("YES", new Dialog.OnClickListener() {
+                            @Override public void onClick(final Dialog dialog, int which) {
+                                final Handler handler = new Handler();
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        toggleRecording(false);
+                                    }
+                                }, 300); // HACK: wait for dialog to dismiss
+                            }}).onNegative("NO",  null).build().show();
+                    } else {
+                        Intent intent = new Intent(getActivity(), TripService.class);
+                        intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_TOGGLE_TRIP);
+                        intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+                            @Override
+                            protected void onReceiveResult(int code, Bundle data) {}
+                        });
+                        getActivity().startService(intent);
+                    }
                 }
             });
-            getActivity().startService(intent);
+            getActivity().startService(checkInProgressIntent);
         } else {
             // TODO add logging
         }

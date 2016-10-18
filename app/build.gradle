@@ -39,6 +39,7 @@ dependencies {
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
     compile "com.mikepenz:iconics-core:2.8.1@aar"
     compile 'com.mikepenz:google-material-typeface:2.2.0.3.original@aar'
+    compile 'com.github.vignesh-iopex:confirmdialog:2.0-rc1'
 }
 
 apply plugin: 'com.google.gms.google-services'

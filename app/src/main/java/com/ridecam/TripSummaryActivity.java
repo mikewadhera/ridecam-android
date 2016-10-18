@@ -13,7 +13,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -49,6 +51,15 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
         mSurfaceView = (SurfaceView)findViewById(R.id.summary_preview);
         mSurfaceView.getHolder().addCallback(this);
 
+        Button doneButton = (Button)findViewById(R.id.done_button);
+        doneButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onDone();
+            }
+        });
+
+
         DB.LoadSimpleTrip loadSimpleTrip = new DB.LoadSimpleTrip(mTripId);
         loadSimpleTrip.runAsync(new DB.LoadSimpleTrip.ResultListener() {
             @Override
@@ -74,12 +85,6 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_done:
-                EditText editView = (EditText)findViewById(R.id.trip_name);
-                DB.UpdateTripName updateTripName = new DB.UpdateTripName(mTripId, editView.getText().toString());
-                updateTripName.run();
-                finish();
-                return true;
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -92,6 +97,17 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
         Log.d(TAG, "onResume");
         super.onResume();
 
+    }
+
+    public void onDone() {
+        EditText editView = (EditText)findViewById(R.id.trip_name);
+        DB.UpdateTripName updateTripName = new DB.UpdateTripName(mTripId, editView.getText().toString());
+        updateTripName.run();
+        Intent intent = new Intent(this, TripActivity.class);
+        intent.putExtra(TripActivity.FOCUS_TRIPS_EXTRA, true);
+        intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        startActivity(intent);
+        finish();
     }
 
     @Override

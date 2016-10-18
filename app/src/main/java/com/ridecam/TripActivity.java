@@ -1,8 +1,10 @@
 package com.ridecam;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -21,6 +23,8 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 public class TripActivity extends AppCompatActivity {
 
     private static final String TAG = "TripActivity";
+
+    public static final String FOCUS_TRIPS_EXTRA = "com.ridecam.TripActivity.FOCUS_TRIPS_EXTRA";
 
     private ViewPager mViewPager;
     private SectionsPagerAdapter mSectionsPagerAdapter;
@@ -46,6 +50,30 @@ public class TripActivity extends AppCompatActivity {
 
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        if (intent != null)
+            setIntent(intent);
+    }
+
+    @Override
+    public void onResume() {
+        Log.d(TAG, "onResume");
+        super.onResume();
+
+        Intent intent = getIntent();
+        if (intent != null) {
+            boolean shouldFocusTrips = intent.getBooleanExtra(FOCUS_TRIPS_EXTRA, false);
+            if (shouldFocusTrips) {
+                focusListFragment();
+            }
+            setIntent(null);
+            return;
+        }
+
+        focusCameraFragment();
     }
 
     @Override
