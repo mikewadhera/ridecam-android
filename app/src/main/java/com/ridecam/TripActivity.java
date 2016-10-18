@@ -79,6 +79,14 @@ public class TripActivity extends AppCompatActivity {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
+    public void focusCameraFragment() {
+        mViewPager.setCurrentItem(0);
+    }
+
+    public void focusListFragment() {
+        mViewPager.setCurrentItem(1);
+    }
+
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
         public SectionsPagerAdapter(FragmentManager fm) {

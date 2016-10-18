@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.ridecam.R;
+import com.ridecam.TripActivity;
 import com.ridecam.TripService;
 import com.ridecam.av.CameraEngine;
 
@@ -176,6 +177,15 @@ public class CameraFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 toggleRecording();
+            }
+        });
+
+        Button listButton = (Button)mRootView.findViewById(R.id.list_button);
+        listButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                TripActivity tripActivity = (TripActivity)getActivity();
+                tripActivity.focusListFragment();
             }
         });
     }
