@@ -34,6 +34,9 @@ public abstract class DB {
             Map<String, Object> tripMap = new HashMap<>();
             tripMap.put("t_start", mTrip.getStartTimestamp());
             tripMap.put("t_end", mTrip.getEndTimestamp());
+            tripMap.put("n", mTrip.getDefaultName());
+            mTrip.calculateMiles();
+            tripMap.put("m", mTrip.getMiles());
 
             mTripsRef.child(mTrip.getId()).setValue(tripMap);
 
@@ -98,6 +101,55 @@ public abstract class DB {
 
         public void run() {
             mTripsRef.child(mId).child("h264_video_url").setValue(mDownloadUrl);
+        }
+
+    }
+
+    public static class LoadSimpleTrip extends DB {
+
+        public interface ResultListener {
+            public void onResult(Trip trip);
+        }
+
+        private String mId;
+
+        public LoadSimpleTrip(String id) {
+            super();
+            mId = id;
+        }
+
+        public void runAsync(final ResultListener resultListener) {
+            mTripsRef.child(mId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    Trip trip = new Trip(mId);
+                    trip.setStartTimestamp((long)dataSnapshot.child("t_start").getValue()) ;
+                    trip.setEndTimestamp((long)dataSnapshot.child("t_end").getValue());
+                    trip.setMiles((long)dataSnapshot.child("m").getValue());
+                    trip.setName((String)dataSnapshot.child("n").getValue());
+                    resultListener.onResult(trip);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            });
+        }
+
+    }
+
+    public static class UpdateTripName extends DB {
+
+        private String mId;
+        private String mName;
+
+        public UpdateTripName(String id, String name) {
+            super();
+            mId = id;
+            mName = name;
+        }
+
+        public void run() {
+            mTripsRef.child(mId).child("n").setValue(mName);
         }
 
     }

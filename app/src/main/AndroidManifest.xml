@@ -33,7 +33,7 @@
         </activity>
 
         <activity android:name="com.ridecam.TripSummaryActivity"
-            android:label="Trip"
+            android:label="Trip Summary"
             android:screenOrientation="portrait">
         </activity>
 

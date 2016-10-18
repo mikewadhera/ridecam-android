@@ -106,10 +106,6 @@ public class TripActivity extends AppCompatActivity {
                         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                         startService(intent);
                         render();
-
-                        Intent a = new Intent(TripActivity.this, TripSummaryActivity.class);
-                        a.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, "-KUIbNgK-bb69S9PSSqp");
-                        startActivity(a);
                     }
 
                     @Override
@@ -211,10 +207,6 @@ public class TripActivity extends AppCompatActivity {
 
         final Button buttonView = (Button)findViewById(R.id.record_button);
         final View previewView = findViewById(R.id.record_frame);
-        final TextView capacityView = (TextView)findViewById(R.id.record_capacity);
-
-        final int capacityHours = AVUtils.estimateVideoDurationHours(Knobs.REC_BITRATE, Knobs.getMaximumRecordingFileSizeBytes(this));
-        capacityView.setText(capacityHours + "HRS");
 
         Intent intent = new Intent(this, TripService.class);
         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);

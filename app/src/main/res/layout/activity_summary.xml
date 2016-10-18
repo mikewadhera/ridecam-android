@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <SurfaceView
+        android:id="@+id/summary_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#c8ffffff"
+        android:paddingTop="10dip"
+        android:keepScreenOn="true"/>
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <EditText
+            android:id="@+id/trip_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:lines="2"
+            android:background="#FFF"
+            android:gravity="top"
+            android:text="10/17 Monday morning"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            android:layout_marginLeft="20sp"
+            android:layout_marginRight="20sp"
+            android:layout_marginTop="20sp"
+            android:layout_marginBottom="80sp"
+            android:padding="10sp"
+            android:layout_alignParentTop="true"/>
+
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true">
+
+            <TextView
+                android:id="@+id/miles_circle"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_margin="10sp"
+                android:textSize="45dp"
+                android:text="121"
+                android:textColor="#FFF"
+                android:gravity="center"
+                android:background="@drawable/miles_circle_large"
+                android:layout_centerHorizontal="true" />
+
+            <TextView
+                android:id="@+id/miles_footnote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="MILES"
+                android:textSize="20dp"
+                android:gravity="center"
+                android:letterSpacing="0.33"
+                android:layout_below="@id/miles_circle"
+                android:layout_marginBottom="70sp"/>
+
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+</FrameLayout>

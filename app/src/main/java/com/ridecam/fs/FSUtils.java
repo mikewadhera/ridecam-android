@@ -63,4 +63,8 @@ public class FSUtils {
         file.delete();
     }
 
+    public static File getVideoFile(Context context, String tripId) {
+        return new File(getVideoDirectory(context), tripId + ".mp4");
+    }
+
 }

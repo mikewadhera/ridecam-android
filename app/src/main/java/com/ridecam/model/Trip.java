@@ -1,16 +1,15 @@
 package com.ridecam.model;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.ridecam.geo.Utils;
 
-import java.util.HashMap;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 public class Trip {
 
@@ -25,8 +24,10 @@ public class Trip {
     private String id;
     private long startTimestamp;
     private long endTimestamp;
+    private long miles;
     private List<Coordinate> coordinates;
     private String videoUrl;
+    private String name;
 
     public static String allocateId() {
         DatabaseReference db = FirebaseDatabase.getInstance().getReference();
@@ -72,7 +73,15 @@ public class Trip {
         this.videoUrl = videoUrl;
     }
 
-    public long getDistanceInMiles() {
+    public void setMiles(long miles) {
+        this.miles = miles;
+    }
+
+    public long getMiles() {
+        return this.miles;
+    }
+
+    public void calculateMiles() {
         double total = 0;
         Coordinate lastCoordinate = null;
         for (Coordinate c : getCoordinates()) {
@@ -83,6 +92,35 @@ public class Trip {
             total += distance;
             lastCoordinate = c;
         }
-        return Math.round(total);
+        this.miles = Math.round(total);
+    }
+
+    public String getDefaultName() {
+        DateFormat df = new SimpleDateFormat("MM/d EEEE");
+        Date date = new Date(this.startTimestamp);
+        String baseName = df.format(date);
+        if ((this.endTimestamp - this.startTimestamp) < 5 * 3600 * 1000) { // 5 hrs
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            int hour = cal.get(Calendar.HOUR_OF_DAY);
+            String suffix = "";
+            if (hour < 12) {
+                suffix = "morning";
+            } else if (hour < 17) {
+                suffix = "afternoon";
+            } else {
+                suffix = "evening";
+            }
+            baseName += " " + suffix;
+        }
+        return baseName;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
