@@ -221,7 +221,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
-                flash(Copy.RIDE_START);
                 showForegroundNotification(Copy.RIDE_START);
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());

@@ -15,6 +15,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
+import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.TextureView;
@@ -23,8 +24,11 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.ridecam.av.AVUtils;
 import com.ridecam.av.CameraEngine;
+
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class TripActivity extends AppCompatActivity {
 
@@ -43,6 +47,7 @@ public class TripActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
+        LayoutInflaterCompat.setFactory(getLayoutInflater(), new IconicsLayoutInflater(getDelegate()));
         super.onCreate(savedInstanceState);
 
         // Starting up or resuming after destroyed (power button pushed or killed by OS)
@@ -216,10 +221,12 @@ public class TripActivity extends AppCompatActivity {
                 boolean isTripInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
                 if (isTripInProgress) {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
-                    buttonView.setText("FINISH");
+                    buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
+                    buttonView.setText("■");
                 } else {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
-                    buttonView.setText("START");
+                    buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
+                    buttonView.setText("");
                 }
             }
         });
@@ -295,6 +302,11 @@ public class TripActivity extends AppCompatActivity {
                 break;
             }
         }
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
 
