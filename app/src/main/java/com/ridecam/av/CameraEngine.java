@@ -11,7 +11,7 @@ import com.ridecam.av.device.CameraDevice;
 import com.ridecam.av.device.OSCamera;
 import com.ridecam.av.device.vendor.SamsungDualCamera;
 
-import static com.ridecam.TripActivity.sCachedSurfaceTexture;
+import static com.ridecam.ui.CameraFragment.sCachedSurfaceTexture;
 
 public class CameraEngine {
 

@@ -20,6 +20,7 @@ import com.ridecam.db.DB;
 import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.GPSEngine;
 import com.ridecam.model.Trip;
+import com.ridecam.ui.CameraFragment;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
@@ -127,7 +128,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     public void acquireCamera() {
         if (mCameraEngine == null) {
-            mCameraEngine = new CameraEngine(this, TripActivity.sCachedSurfaceTexture);
+            mCameraEngine = new CameraEngine(this, CameraFragment.sCachedSurfaceTexture);
             mCameraEngine.setErrorListener(this);
             mCameraEngine.acquireCamera();
         } else {
@@ -210,7 +211,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     }
 
     public void reRenderActivity() {
-        Intent intent = new Intent(TripActivity.RERENDER_EVENT);
+        Intent intent = new Intent(CameraFragment.RERENDER_EVENT);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
