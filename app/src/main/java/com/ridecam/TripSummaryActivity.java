@@ -1,11 +1,13 @@
 package com.ridecam;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -19,12 +21,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.ridecam.db.DB;
 import com.ridecam.fs.FSUtils;
 import com.ridecam.model.Trip;
 
 import java.io.File;
 import java.io.IOException;
+
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class TripSummaryActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
@@ -41,6 +46,9 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
+
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_summary);
 
@@ -108,6 +116,11 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
         intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(intent);
         finish();
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
     @Override

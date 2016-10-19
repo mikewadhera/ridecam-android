@@ -33,6 +33,7 @@
         </activity>
 
         <activity android:name="com.ridecam.TripSummaryActivity"
+            android:theme="@style/AppTheme.NoActionBar"
             android:label="Trip Summary"
             android:screenOrientation="portrait">
         </activity>

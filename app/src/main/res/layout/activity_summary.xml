@@ -17,6 +17,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <TextView
+            android:id="@+id/actionbar"
+            android:layout_width="match_parent"
+            android:text="Trip Summary"
+            android:gravity="center_vertical"
+            android:paddingLeft="20sp"
+            fontPath="fonts/VAG-Rounded-Bold.ttf"
+            android:textSize="28sp"
+            android:textColor="#FFF"
+            android:layout_height="74dp"
+            android:background="@color/colorPrimary"
+            android:layout_alignParentTop="true" />
+
         <EditText
             android:id="@+id/trip_name"
             android:layout_width="match_parent"
@@ -25,7 +38,6 @@
             android:lines="2"
             android:background="#FFF"
             android:gravity="top"
-            android:text="10/17 Monday morning"
             android:textSize="20dp"
             android:textStyle="bold"
             android:layout_marginLeft="20sp"
@@ -33,7 +45,7 @@
             android:layout_marginTop="20sp"
             android:layout_marginBottom="80sp"
             android:padding="10sp"
-            android:layout_alignParentTop="true"/>
+            android:layout_below="@id/actionbar"/>
 
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
@@ -47,7 +59,6 @@
                 android:layout_height="150dp"
                 android:layout_margin="10sp"
                 android:textSize="45dp"
-                android:text="121"
                 android:textColor="#FFF"
                 android:gravity="center"
                 android:background="@drawable/miles_circle_large"
@@ -70,6 +81,8 @@
             android:layout_width="120dp"
             android:layout_height="60dp"
             android:text="FINISH"
+            android:textColor="#FFF"
+            android:background="#4CAF50"
             android:textSize="20dp"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
