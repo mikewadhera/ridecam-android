@@ -4,7 +4,7 @@
     android:layout_height="150dp"
     android:background="@drawable/week_card_border">
 
-    <TextView android:id="@+id/title"
+    <TextView android:id="@+id/week_title"
         android:text="Week of 10/17"
         android:textSize="17dp"
         android:textStyle="bold"
@@ -14,6 +14,17 @@
         android:layout_height="wrap_content"
         android:layout_width="wrap_content">
     </TextView>
+
+    <TextView
+        android:id="@+id/miles_circle"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="10sp"
+        android:textSize="16dp"
+        android:textColor="#FFF"
+        android:gravity="center"
+        android:background="@drawable/miles_circle_medium"
+        android:layout_alignParentBottom="true"/>
 
 
 </RelativeLayout>

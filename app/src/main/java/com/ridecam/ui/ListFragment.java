@@ -9,14 +9,20 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
-import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.ridecam.R;
 import com.ridecam.TripActivity;
+import com.ridecam.db.DB;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ListFragment extends Fragment {
 
     View mRootView;
+    ListAdapter mListAdapter;
 
     public ListFragment() {
     }
@@ -30,6 +36,8 @@ public class ListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.fragment_dashkam, container, false);
+
+        mListAdapter = new ListAdapter(getActivity());
 
         loadLayout();
 
@@ -49,33 +57,41 @@ public class ListFragment extends Fragment {
         });
 
         GridView gridview = (GridView) mRootView.findViewById(R.id.gridview);
-        gridview.setAdapter(new ListAdapter(getActivity()));
+        gridview.setAdapter(mListAdapter);
     }
 
     public void render() {
-
+        DB.LoadWeeklyTrips command = new DB.LoadWeeklyTrips();
+        command.runAsync(new DB.LoadWeeklyTrips.WeeklyTripsListener() {
+            @Override
+            public void onResult(List<DB.LoadWeeklyTrips.WeeklyTripSummary> result) {
+                mListAdapter.setWeeklySummaries(result);
+                mListAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     public class ListAdapter extends BaseAdapter {
         private Context mContext;
+        private List<DB.LoadWeeklyTrips.WeeklyTripSummary> mWeeklyTripSummaries;
 
         public ListAdapter(Context c) {
             mContext = c;
+            mWeeklyTripSummaries = new ArrayList<>();
         }
 
         public int getCount() {
-            return mThumbIds.length;
+            return mWeeklyTripSummaries.size();
         }
 
         public Object getItem(int position) {
-            return null;
+            return mWeeklyTripSummaries.get(position);
         }
 
         public long getItemId(int position) {
             return 0;
         }
 
-        // create a new ImageView for each item referenced by the Adapter
         public View getView(int position, View convertView, ViewGroup parent) {
             View view;
             LayoutInflater inflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -86,18 +102,20 @@ public class ListFragment extends Fragment {
                 view = convertView;
             }
 
-            //imageView.setImageResource(mThumbIds[position]);
+            TextView weekTitleTextView = (TextView)view.findViewById(R.id.week_title);
+            DB.LoadWeeklyTrips.WeeklyTripSummary tripSummary = mWeeklyTripSummaries.get(position);
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/d");
+            String weekTitle = "Week of " + sdf.format(tripSummary.week);
+            weekTitleTextView.setText(weekTitle);
+
+            TextView milesTextView = (TextView)view.findViewById(R.id.miles_circle);
+            milesTextView.setText(String.valueOf(tripSummary.miles));
+
             return view;
         }
 
-        // references to our images
-        private Integer[] mThumbIds = {
-                R.drawable.common_google_signin_btn_icon_dark,
-                R.drawable.common_google_signin_btn_icon_dark,
-                R.drawable.common_google_signin_btn_icon_dark,
-                R.drawable.common_google_signin_btn_icon_dark,
-                R.drawable.common_google_signin_btn_icon_dark,
-                R.drawable.common_google_signin_btn_icon_dark,
-        };
+        public void setWeeklySummaries(List<DB.LoadWeeklyTrips.WeeklyTripSummary> weeklySummaries) {
+            mWeeklyTripSummaries = weeklySummaries;
+        }
     }
 }
