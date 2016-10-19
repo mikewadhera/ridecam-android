@@ -30,6 +30,17 @@ public abstract class DB {
         mLocationsRef = rootRef.child("locations");
     }
 
+    public Trip mapSimpleTrip(DataSnapshot dataSnapshot) {
+        Trip trip = new Trip(dataSnapshot.getKey());
+        trip.setStartTimestamp((long)dataSnapshot.child("t_start").getValue()) ;
+        trip.setEndTimestamp((long)dataSnapshot.child("t_end").getValue());
+        Object m = dataSnapshot.child("m").getValue();
+        if (m != null) trip.setMiles((long)m);
+        Object n = dataSnapshot.child("n").getValue();
+        if (n != null) trip.setName((String)n);
+        return trip;
+    }
+
     public static class Save extends DB {
 
         private Trip mTrip;
@@ -131,12 +142,7 @@ public abstract class DB {
             mTripsRef.child(mId).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    Trip trip = new Trip(mId);
-                    trip.setStartTimestamp((long)dataSnapshot.child("t_start").getValue()) ;
-                    trip.setEndTimestamp((long)dataSnapshot.child("t_end").getValue());
-                    trip.setMiles((long)dataSnapshot.child("m").getValue());
-                    trip.setName((String)dataSnapshot.child("n").getValue());
-                    resultListener.onResult(trip);
+                    resultListener.onResult(mapSimpleTrip(dataSnapshot));
                 }
 
                 @Override
@@ -195,7 +201,9 @@ public abstract class DB {
                     Date lastDate = null;
                     Date currentDate;
                     for (DataSnapshot tripDataSnapshot : dataSnapshot.getChildren()) {
-                        Log.e(TAG, tripDataSnapshot.getKey());
+                        if (tripDataSnapshot.child("t_end").getValue() == null) { // Skip in-progress
+                            continue;
+                        }
                         currentDate = new Date((long)tripDataSnapshot.child("t_start").getValue());
                         if (lastDate == null || !isSameWeek(lastDate, currentDate)) {
                             if (lastSummary != null) {
@@ -243,6 +251,39 @@ public abstract class DB {
             calendar.set(Calendar.WEEK_OF_YEAR, dWeek);
             calendar.set(Calendar.YEAR, dYear);
             return calendar.getTime();
+        }
+    }
+
+    public static class SimpleTripRangeQuery extends DB {
+
+        public interface ResultListener {
+            public void onResult(List<Trip> trips);
+        }
+
+        private String mStartTripId;
+        private String mEndTripId;
+
+        public SimpleTripRangeQuery(String startTripId, String endTripId) {
+            mStartTripId = startTripId;
+            mEndTripId = endTripId;
+        }
+
+        public void runAsync(final ResultListener resultListener) {
+            DatabaseReference tripsRef = mTripsRef;
+
+            tripsRef.orderByKey().startAt(mStartTripId).endAt(mEndTripId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    ArrayList<Trip> result = new ArrayList<>();
+                    for (DataSnapshot tripDataSnapshot : dataSnapshot.getChildren()) {
+                        result.add(mapSimpleTrip(tripDataSnapshot));
+                    }
+                    resultListener.onResult(result);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            });
         }
     }
 

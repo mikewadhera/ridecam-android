@@ -1,18 +1,23 @@
 package com.ridecam.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ridecam.R;
 import com.ridecam.TripActivity;
+import com.ridecam.TripListActivity;
 import com.ridecam.db.DB;
 
 import java.text.SimpleDateFormat;
@@ -30,6 +35,15 @@ public class ListFragment extends Fragment {
     public static ListFragment factory() {
         ListFragment listFragment = new ListFragment();
         return listFragment;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (mListAdapter != null) {
+            render();
+        }
     }
 
     @Override
@@ -58,6 +72,19 @@ public class ListFragment extends Fragment {
 
         GridView gridview = (GridView) mRootView.findViewById(R.id.gridview);
         gridview.setAdapter(mListAdapter);
+
+        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v,
+                                    int position, long id) {
+                DB.LoadWeeklyTrips.WeeklyTripSummary weeklyTripSummary = mListAdapter.getItem(position);
+
+                Intent intent = new Intent(getActivity(), TripListActivity.class);
+                intent.putExtra(TripListActivity.TRIPS_TITLE_EXTRA, mListAdapter.getWeekTitle(position));
+                intent.putExtra(TripListActivity.TRIP_START_ID_EXTRA, weeklyTripSummary.tripIds.get(0));
+                intent.putExtra(TripListActivity.TRIP_END_ID_EXTRA, weeklyTripSummary.tripIds.get(weeklyTripSummary.tripIds.size()-1));
+                startActivity(intent);
+            }
+        });
     }
 
     public void render() {
@@ -84,7 +111,7 @@ public class ListFragment extends Fragment {
             return mWeeklyTripSummaries.size();
         }
 
-        public Object getItem(int position) {
+        public DB.LoadWeeklyTrips.WeeklyTripSummary getItem(int position) {
             return mWeeklyTripSummaries.get(position);
         }
 
@@ -103,19 +130,22 @@ public class ListFragment extends Fragment {
             }
 
             TextView weekTitleTextView = (TextView)view.findViewById(R.id.week_title);
-            DB.LoadWeeklyTrips.WeeklyTripSummary tripSummary = mWeeklyTripSummaries.get(position);
-            SimpleDateFormat sdf = new SimpleDateFormat("MM/d");
-            String weekTitle = "Week of " + sdf.format(tripSummary.week);
-            weekTitleTextView.setText(weekTitle);
+            weekTitleTextView.setText(getWeekTitle(position));
 
             TextView milesTextView = (TextView)view.findViewById(R.id.miles_circle);
-            milesTextView.setText(String.valueOf(tripSummary.miles));
+            milesTextView.setText(String.valueOf(mWeeklyTripSummaries.get(position).miles));
 
             return view;
         }
 
         public void setWeeklySummaries(List<DB.LoadWeeklyTrips.WeeklyTripSummary> weeklySummaries) {
             mWeeklyTripSummaries = weeklySummaries;
+        }
+
+        public String getWeekTitle(int position) {
+            DB.LoadWeeklyTrips.WeeklyTripSummary tripSummary = mWeeklyTripSummaries.get(position);
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/d");
+            return "Week of " + sdf.format(tripSummary.week);
         }
     }
 }

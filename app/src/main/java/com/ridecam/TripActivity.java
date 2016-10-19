@@ -72,8 +72,6 @@ public class TripActivity extends AppCompatActivity {
             setIntent(null);
             return;
         }
-
-        focusCameraFragment();
     }
 
     @Override
