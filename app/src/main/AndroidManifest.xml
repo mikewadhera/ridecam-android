@@ -54,7 +54,8 @@
         <activity
             android:name=".TripListActivity"
             android:label="@string/title_activity_trip_list"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".TripActivity"></activity>
     </application>
 
 </manifest>

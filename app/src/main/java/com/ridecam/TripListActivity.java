@@ -39,6 +39,8 @@ public class TripListActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         Intent intent = getIntent();
         setTitle(intent.getStringExtra(TRIPS_TITLE_EXTRA));
 
@@ -83,10 +85,22 @@ public class TripListActivity extends AppCompatActivity {
             }
 
             final TextView textView = (TextView) rowView.findViewById(R.id.firstLine);
+            final TextView durationTextView = (TextView) rowView.findViewById(R.id.secondLine);
             Trip trip = values[position];
             textView.setText(trip.getName());
+            durationTextView.setText(trip.getHumanDuration());
 
             return rowView;
+        }
+
+        @Override
+        public boolean areAllItemsEnabled() {
+            return true;
+        }
+
+        @Override
+        public boolean isEnabled(int position) {
+            return true;
         }
     }
 
