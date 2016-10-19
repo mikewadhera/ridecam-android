@@ -32,8 +32,6 @@ import com.ridecam.TripActivity;
 import com.ridecam.TripService;
 import com.ridecam.av.CameraEngine;
 
-import static android.R.attr.data;
-
 public class CameraFragment extends Fragment {
 
     private static final String TAG = "CameraFragment";
@@ -61,14 +59,6 @@ public class CameraFragment extends Fragment {
                              Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.fragment_camera, container, false);
 
-        // Construct a local broadcast receiver that listens for re-render events from the service
-        mReRenderReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                render();
-            }
-        };
-
         return mRootView;
     }
 
@@ -76,6 +66,14 @@ public class CameraFragment extends Fragment {
     public void onStart() {
         Log.d(TAG, "onStart");
         super.onStart();
+
+        // Construct a local broadcast receiver that listens for re-render events from the service
+        mReRenderReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                render();
+            }
+        };
 
         // Register for re-render events from service
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mReRenderReceiver, new IntentFilter(RERENDER_EVENT));
@@ -94,7 +92,7 @@ public class CameraFragment extends Fragment {
 
         } else {
 
-            loadLayout();
+            addListeners();
 
             if (sCachedSurfaceTexture == null) {
 
@@ -126,6 +124,7 @@ public class CameraFragment extends Fragment {
                     public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {}
                 };
                 textureView.setSurfaceTextureListener(sTextureViewListener);
+                textureView.setVisibility(View.VISIBLE);
 
             } else {
 
@@ -175,7 +174,7 @@ public class CameraFragment extends Fragment {
 
     }
 
-    public void loadLayout() {
+    public void addListeners() {
         Button recordButton = (Button)mRootView.findViewById(R.id.record_button);
         recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
