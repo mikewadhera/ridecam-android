@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="150dp"
+    android:layout_height="150dp"
+    android:background="@drawable/week_card_border">
+
+    <TextView android:id="@+id/title"
+        android:text="Week of 10/17"
+        android:textSize="17dp"
+        android:textStyle="bold"
+        android:textColor="#111"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="14dp"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content">
+    </TextView>
+
+
+</RelativeLayout>
