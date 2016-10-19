@@ -129,6 +129,7 @@ public class CameraFragment extends Fragment {
             } else {
 
                 TextureView textureView = (TextureView) mRootView.findViewById(R.id.camera_preview);
+                textureView.setVisibility(View.VISIBLE);
 
                 textureView.setSurfaceTextureListener(sTextureViewListener);
 
