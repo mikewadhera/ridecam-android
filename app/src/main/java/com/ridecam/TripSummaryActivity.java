@@ -22,6 +22,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.mikepenz.iconics.context.IconicsLayoutInflater;
+import com.ridecam.auth.AuthUtils;
+import com.ridecam.auth.Installation;
 import com.ridecam.db.DB;
 import com.ridecam.fs.FSUtils;
 import com.ridecam.model.Trip;
@@ -67,8 +69,7 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
             }
         });
 
-
-        DB.LoadSimpleTrip loadSimpleTrip = new DB.LoadSimpleTrip(mTripId);
+        DB.LoadSimpleTrip loadSimpleTrip = new DB.LoadSimpleTrip(AuthUtils.getUserId(this), mTripId);
         loadSimpleTrip.runAsync(new DB.LoadSimpleTrip.ResultListener() {
             @Override
             public void onResult(Trip trip) {
@@ -109,7 +110,7 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
 
     public void onDone() {
         EditText editView = (EditText)findViewById(R.id.trip_name);
-        DB.UpdateTripName updateTripName = new DB.UpdateTripName(mTripId, editView.getText().toString());
+        DB.UpdateTripName updateTripName = new DB.UpdateTripName(AuthUtils.getUserId(this), mTripId, editView.getText().toString());
         updateTripName.run();
         Intent intent = new Intent(this, TripActivity.class);
         intent.putExtra(TripActivity.FOCUS_TRIPS_EXTRA, true);

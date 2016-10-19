@@ -17,6 +17,8 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.ridecam.auth.AuthUtils;
+import com.ridecam.auth.Installation;
 import com.ridecam.db.DB;
 import com.ridecam.model.Trip;
 
@@ -44,7 +46,9 @@ public class TripListActivity extends AppCompatActivity {
 
         final ListView listView = (ListView)findViewById(R.id.trip_list);
 
-        DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(intent.getStringExtra(TRIP_START_ID_EXTRA),
+        DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(
+                AuthUtils.getUserId(this),
+                intent.getStringExtra(TRIP_START_ID_EXTRA),
                 intent.getStringExtra(TRIP_END_ID_EXTRA));
         command.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
             @Override

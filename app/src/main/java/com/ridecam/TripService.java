@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
 
+import com.ridecam.auth.AuthUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
 import com.ridecam.db.DB;
@@ -248,7 +249,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 showForegroundNotification(Copy.RIDE_FINISH);
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
-                    DB.Save saveCommand = new DB.Save(mTrip);
+                    DB.Save saveCommand = new DB.Save(AuthUtils.getUserId(this), mTrip);
                     saveCommand.run();
                     startSummaryActivity(mTrip.getId());
                     mTrip = null;
@@ -326,7 +327,9 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     }
 
     public void stopLocationUpdates() {
-        mGPSEngine.stopLocationUpdates();
+        if (mGPSEngine != null) {
+            mGPSEngine.stopLocationUpdates();
+        }
     }
 
     @Override

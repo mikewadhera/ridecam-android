@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
 import com.ridecam.TripListActivity;
+import com.ridecam.auth.AuthUtils;
 import com.ridecam.db.DB;
 
 import java.text.SimpleDateFormat;
@@ -88,7 +89,7 @@ public class ListFragment extends Fragment {
     }
 
     public void render() {
-        DB.LoadWeeklyTrips command = new DB.LoadWeeklyTrips();
+        DB.LoadWeeklyTrips command = new DB.LoadWeeklyTrips(AuthUtils.getUserId(getActivity()));
         command.runAsync(new DB.LoadWeeklyTrips.WeeklyTripsListener() {
             @Override
             public void onResult(List<DB.LoadWeeklyTrips.WeeklyTripSummary> result) {
@@ -144,6 +145,7 @@ public class ListFragment extends Fragment {
 
         public String getWeekTitle(int position) {
             DB.LoadWeeklyTrips.WeeklyTripSummary tripSummary = mWeeklyTripSummaries.get(position);
+
             SimpleDateFormat sdf = new SimpleDateFormat("MM/d");
             return "Week of " + sdf.format(tripSummary.week);
         }

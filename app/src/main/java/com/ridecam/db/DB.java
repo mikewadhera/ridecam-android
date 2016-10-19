@@ -17,17 +17,21 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static android.R.attr.id;
+
 public abstract class DB {
 
     public static final String TAG = "DB";
 
+    protected String mUserId;
     protected DatabaseReference mTripsRef;
     protected DatabaseReference mLocationsRef;
 
-    public DB() {
+    public DB(String userId) {
         DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
-        mTripsRef = rootRef.child("trips");
-        mLocationsRef = rootRef.child("locations");
+        mUserId = userId;
+        mTripsRef = rootRef.child("trips").child(mUserId);
+        mLocationsRef = rootRef.child("locations").child(mUserId);
     }
 
     public Trip mapSimpleTrip(DataSnapshot dataSnapshot) {
@@ -45,8 +49,8 @@ public abstract class DB {
 
         private Trip mTrip;
 
-        public Save(Trip trip) {
-            super();
+        public Save(String userId, Trip trip) {
+            super(userId);
             mTrip = trip;
         }
 
@@ -83,8 +87,8 @@ public abstract class DB {
 
         private String mId;
 
-        public IsRecordingComplete(String id) {
-            super();
+        public IsRecordingComplete(String userId, String id) {
+            super(userId);
             mId = id;
         }
 
@@ -113,8 +117,8 @@ public abstract class DB {
         private String mId;
         private String mDownloadUrl;
 
-        public SaveTripVideoDownloadURL(String id, String downloadUrl) {
-            super();
+        public SaveTripVideoDownloadURL(String userId, String id, String downloadUrl) {
+            super(userId);
             mId = id;
             mDownloadUrl = downloadUrl;
         }
@@ -133,8 +137,8 @@ public abstract class DB {
 
         private String mId;
 
-        public LoadSimpleTrip(String id) {
-            super();
+        public LoadSimpleTrip(String userId, String id) {
+            super(userId);
             mId = id;
         }
 
@@ -157,8 +161,8 @@ public abstract class DB {
         private String mId;
         private String mName;
 
-        public UpdateTripName(String id, String name) {
-            super();
+        public UpdateTripName(String userId, String id, String name) {
+            super(userId);
             mId = id;
             mName = name;
         }
@@ -186,7 +190,8 @@ public abstract class DB {
             void onResult(List<WeeklyTripSummary> result);
         }
 
-        public LoadWeeklyTrips() {
+        public LoadWeeklyTrips(String userId) {
+            super(userId);
         }
 
         public void runAsync(final WeeklyTripsListener weeklyTripsListener) {
@@ -219,7 +224,9 @@ public abstract class DB {
                         lastSummary.tripIds.add(tripDataSnapshot.getKey());
                         lastDate = currentDate;
                     }
-                    result.addFirst(lastSummary);
+                    if (lastSummary != null) {
+                        result.addFirst(lastSummary);
+                    }
                     weeklyTripsListener.onResult(result);
                 }
 
@@ -263,7 +270,8 @@ public abstract class DB {
         private String mStartTripId;
         private String mEndTripId;
 
-        public SimpleTripRangeQuery(String startTripId, String endTripId) {
+        public SimpleTripRangeQuery(String userId, String startTripId, String endTripId) {
+            super(userId);
             mStartTripId = startTripId;
             mEndTripId = endTripId;
         }
