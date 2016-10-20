@@ -1,13 +1,10 @@
 package com.ridecam;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -21,9 +18,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.ridecam.auth.AuthUtils;
-import com.ridecam.auth.Installation;
 import com.ridecam.db.DB;
 import com.ridecam.fs.FSUtils;
 import com.ridecam.model.Trip;
@@ -52,7 +47,7 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        setContentView(R.layout.activity_summary);
+        setContentView(R.layout.activity_trip_summary);
 
         Intent intent = getIntent();
         mTripId = intent.getStringExtra(TRIP_ID_EXTRA);
@@ -113,7 +108,6 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
         DB.UpdateTripName updateTripName = new DB.UpdateTripName(AuthUtils.getUserId(this), mTripId, editView.getText().toString());
         updateTripName.run();
         Intent intent = new Intent(this, TripActivity.class);
-        intent.putExtra(TripActivity.FOCUS_TRIPS_EXTRA, true);
         intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(intent);
         finish();

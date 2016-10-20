@@ -126,7 +126,7 @@ public class Trip {
 
     public String getHumanDuration() {
         SimpleDateFormat sdf = new SimpleDateFormat("h:mm a");
-        return sdf.format(new Date(startTimestamp)) + " to " + sdf.format(new Date(endTimestamp));
+        return sdf.format(new Date(startTimestamp)) + " - " + sdf.format(new Date(endTimestamp));
 
     }
 }

@@ -45,12 +45,12 @@
         android:id="@+id/list_button"
         android:layout_width="60dp"
         android:layout_height="60dp"
-        android:text="{gmd-menu}"
+        android:text="{gmd-folder}"
         android:textColor="#7dffffff"
         android:background="#00000000"
         android:gravity="right"
         android:layout_gravity="top|right"
-        android:textSize="36sp"
-        android:layout_marginTop="40dp"
+        android:textSize="30sp"
+        android:layout_marginTop="42dp"
         android:layout_marginRight="45dp"/>
 </FrameLayout>

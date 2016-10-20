@@ -39,7 +39,7 @@
             android:name=".TripSummaryActivity"
             android:label="Trip Summary"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <service
             android:name=".TripService"
@@ -54,8 +54,17 @@
         <activity
             android:name=".TripListActivity"
             android:label="@string/title_activity_trip_list"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:parentActivityName=".TripActivity"></activity>
+            android:parentActivityName=".WeekViewActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".WeekViewActivity"
+            android:label="Trips"
+            android:parentActivityName=".TripActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.ridecam.TripActivity" />
+        </activity>
     </application>
 
 </manifest>

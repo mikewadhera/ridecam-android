@@ -30,6 +30,7 @@ import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
 import com.ridecam.TripService;
+import com.ridecam.WeekViewActivity;
 import com.ridecam.av.CameraEngine;
 
 public class CameraFragment extends Fragment {
@@ -55,9 +56,21 @@ public class CameraFragment extends Fragment {
     }
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate");
+        super.onCreate(savedInstanceState);
+
+        // Starting up or resuming after destroyed (power button pushed or killed by OS)
+
+        // We don't start the service here as we may not have camera permissions yet
+        // Not to mention there is nothing interesting the service
+        // would be interested about at this point
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        mRootView = inflater.inflate(R.layout.fragment_camera, container, false);
+        mRootView = inflater.inflate(R.layout.fragment_trip, container, false);
 
         return mRootView;
     }
@@ -189,7 +202,9 @@ public class CameraFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 TripActivity tripActivity = (TripActivity)getActivity();
-                tripActivity.focusListFragment();
+
+                Intent intent = new Intent(getActivity(), WeekViewActivity.class);
+                startActivity(intent);
             }
         });
     }

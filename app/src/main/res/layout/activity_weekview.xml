@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.ridecam.TripListActivity">
+    tools:context="com.ridecam.WeekViewActivity">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -21,22 +21,14 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/content_trip_list"
+        android:id="@+id/fragment"
+        android:name="com.ridecam.ui.WeekViewFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:context="com.ridecam.TripListActivity"
-        tools:showIn="@layout/activity_trip_list">
-
-        <ListView
-            android:id="@+id/trip_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-        </ListView>
-
-    </RelativeLayout>
+        tools:layout="@layout/fragment_weekview" />
 
 </android.support.design.widget.CoordinatorLayout>

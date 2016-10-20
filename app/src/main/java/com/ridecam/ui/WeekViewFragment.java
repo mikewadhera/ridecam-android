@@ -4,19 +4,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.GridView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.ridecam.R;
-import com.ridecam.TripActivity;
 import com.ridecam.TripListActivity;
 import com.ridecam.auth.AuthUtils;
 import com.ridecam.db.DB;
@@ -25,17 +21,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListFragment extends Fragment {
+public class WeekViewFragment extends Fragment {
 
     View mRootView;
     ListAdapter mListAdapter;
 
-    public ListFragment() {
+    public WeekViewFragment() {
     }
 
-    public static ListFragment factory() {
-        ListFragment listFragment = new ListFragment();
-        return listFragment;
+    public static WeekViewFragment factory() {
+        WeekViewFragment weekViewFragment = new WeekViewFragment();
+        return weekViewFragment;
     }
 
     @Override
@@ -50,27 +46,18 @@ public class ListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        mRootView = inflater.inflate(R.layout.fragment_dashkam, container, false);
+        mRootView = inflater.inflate(R.layout.fragment_weekview, container, false);
 
         mListAdapter = new ListAdapter(getActivity());
 
-        loadLayout();
+        addListeners();
 
         render();
 
         return mRootView;
     }
 
-    public void loadLayout() {
-        Button cameraButton = (Button)mRootView.findViewById(R.id.camera_button);
-        cameraButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                TripActivity tripActivity = (TripActivity)getActivity();
-                tripActivity.focusCameraFragment();
-            }
-        });
-
+    public void addListeners() {
         GridView gridview = (GridView) mRootView.findViewById(R.id.gridview);
         gridview.setAdapter(mListAdapter);
 
@@ -125,7 +112,7 @@ public class ListFragment extends Fragment {
             LayoutInflater inflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             if (convertView == null) {
                 // if it's not recycled, initialize some attributes
-                view = inflater.inflate(R.layout.view_list_week, parent, false);
+                view = inflater.inflate(R.layout.item_week_list, parent, false);
             } else {
                 view = convertView;
             }
