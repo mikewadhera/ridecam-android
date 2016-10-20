@@ -4,28 +4,51 @@
     android:layout_height="?android:attr/listPreferredItemHeight">
 
     <TextView
+        android:id="@+id/miles_circle"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:textSize="14dp"
+        android:textColor="#FFF"
+        android:gravity="center"
+        android:background="@drawable/miles_circle_small"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_centerVertical="true"/>
+
+    <TextView
         android:id="@+id/secondLine"
         android:layout_width="fill_parent"
-        android:layout_height="26dip"
+        android:layout_height="28dip"
         android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@id/miles_circle"
         android:layout_alignParentRight="true"
         android:ellipsize="marquee"
         android:singleLine="true"
-        android:text="Description"
-        android:textSize="12sp"
-        android:layout_marginLeft="20dp"/>
+        android:text=""
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/firstLine"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/secondLine"
-        android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:layout_alignWithParentIfMissing="true"
+        android:layout_toRightOf="@id/miles_circle"
         android:gravity="center_vertical"
         android:text=""
-        android:textSize="16sp"
-        android:layout_marginLeft="20dp"/>
+        android:textSize="14sp"
+        android:textColor="#111"/>
+
+    <TextView
+        android:id="@+id/star"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:text="{gmd-star-border}"
+        android:textSize="36dp"
+        android:layout_marginRight="15dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true" />
+
 
 </RelativeLayout>

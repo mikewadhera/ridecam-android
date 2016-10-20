@@ -2,6 +2,7 @@ package com.ridecam.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -12,6 +13,8 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
 
+import com.mikepenz.google_material_typeface_library.GoogleMaterial;
+import com.mikepenz.iconics.IconicsDrawable;
 import com.ridecam.R;
 import com.ridecam.TripListActivity;
 import com.ridecam.auth.AuthUtils;
@@ -64,12 +67,17 @@ public class WeekViewFragment extends Fragment {
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
-                DB.LoadWeeklyTrips.WeeklyTripSummary weeklyTripSummary = mListAdapter.getItem(position);
-
                 Intent intent = new Intent(getActivity(), TripListActivity.class);
-                intent.putExtra(TripListActivity.TRIPS_TITLE_EXTRA, mListAdapter.getWeekTitle(position));
-                intent.putExtra(TripListActivity.TRIP_START_ID_EXTRA, weeklyTripSummary.tripIds.get(0));
-                intent.putExtra(TripListActivity.TRIP_END_ID_EXTRA, weeklyTripSummary.tripIds.get(weeklyTripSummary.tripIds.size()-1));
+
+                if (position == 0) { // Starred
+                    intent.putExtra(TripListActivity.TRIPS_IS_STARRED_EXTRA, true);
+                } else {
+                    DB.LoadWeeklyTrips.WeeklyTripSummary weeklyTripSummary = mListAdapter.getItem(position-1);
+                    intent.putExtra(TripListActivity.TRIPS_TITLE_EXTRA, mListAdapter.getWeekTitle(position-1));
+                    intent.putExtra(TripListActivity.TRIP_START_ID_EXTRA, weeklyTripSummary.tripIds.get(0));
+                    intent.putExtra(TripListActivity.TRIP_END_ID_EXTRA, weeklyTripSummary.tripIds.get(weeklyTripSummary.tripIds.size()-1));
+                }
+
                 startActivity(intent);
             }
         });
@@ -96,7 +104,7 @@ public class WeekViewFragment extends Fragment {
         }
 
         public int getCount() {
-            return mWeeklyTripSummaries.size();
+            return mWeeklyTripSummaries.size()+1;
         }
 
         public DB.LoadWeeklyTrips.WeeklyTripSummary getItem(int position) {
@@ -118,10 +126,20 @@ public class WeekViewFragment extends Fragment {
             }
 
             TextView weekTitleTextView = (TextView)view.findViewById(R.id.week_title);
-            weekTitleTextView.setText(getWeekTitle(position));
-
             TextView milesTextView = (TextView)view.findViewById(R.id.miles_circle);
-            milesTextView.setText(String.valueOf(mWeeklyTripSummaries.get(position).miles));
+
+            if (position == 0) { // Starred
+                weekTitleTextView.setText("");
+                milesTextView.setAlpha(0);
+                Drawable bg = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_folder_special).color(0xFFc8c4d1).sizeDp(120);
+                view.setBackground(bg);
+            } else {
+                weekTitleTextView.setText(getWeekTitle(position-1));
+                milesTextView.setAlpha(1);
+                milesTextView.setText(String.valueOf(mWeeklyTripSummaries.get(position-1).miles));
+                Drawable bg = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_folder).color(0x4bc8c4d1).sizeDp(120);
+                view.setBackground(bg);
+            }
 
             return view;
         }
