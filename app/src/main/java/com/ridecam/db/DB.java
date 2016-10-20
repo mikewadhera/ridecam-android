@@ -42,6 +42,8 @@ public abstract class DB {
         if (m != null) trip.setMiles((long)m);
         Object n = dataSnapshot.child("n").getValue();
         if (n != null) trip.setName((String)n);
+        Object v = dataSnapshot.child("h264_video_url").getValue();
+        if (v != null) trip.setVideoUrl((String)v);
         return trip;
     }
 

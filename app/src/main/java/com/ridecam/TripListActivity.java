@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -48,6 +49,16 @@ public class TripListActivity extends AppCompatActivity {
         mTrips = new Trip[]{};
 
         final ListView listView = (ListView)findViewById(R.id.trip_list);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Trip trip = mTrips[mTrips.length-i-1];
+                Intent intent = new Intent(TripListActivity.this, PlayerActivity.class);
+                intent.putExtra(PlayerActivity.TRIP_ID_EXTRA, trip.getLocalOrRemoteVideoUrl(TripListActivity.this));
+                startActivity(intent);
+            }
+        });
 
         Intent intent = getIntent();
 
@@ -95,7 +106,7 @@ public class TripListActivity extends AppCompatActivity {
             final TextView textView = (TextView) rowView.findViewById(R.id.firstLine);
             final TextView durationTextView = (TextView) rowView.findViewById(R.id.secondLine);
             final TextView milesView = (TextView) rowView.findViewById(R.id.miles_circle);
-            Trip trip = values[position];
+            Trip trip = values[values.length-position-1];
             textView.setText(trip.getName());
             durationTextView.setText(trip.getHumanDuration());
             milesView.setText(String.valueOf(trip.getMiles()));

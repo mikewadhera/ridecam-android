@@ -65,6 +65,12 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.ridecam.TripActivity" />
         </activity>
+
+        <activity android:name=".PlayerActivity"
+            android:label="Trip"
+            android:parentActivityName=".TripListActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

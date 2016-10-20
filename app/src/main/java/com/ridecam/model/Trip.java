@@ -1,7 +1,10 @@
 package com.ridecam.model;
 
+import android.content.Context;
+
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.Utils;
 
 import java.text.DateFormat;
@@ -128,5 +131,13 @@ public class Trip {
         SimpleDateFormat sdf = new SimpleDateFormat("h:mm a");
         return sdf.format(new Date(startTimestamp)) + " - " + sdf.format(new Date(endTimestamp));
 
+    }
+
+    public String getLocalOrRemoteVideoUrl(Context context) {
+        if (this.videoUrl != null) {
+            return this.videoUrl;
+        } else {
+            return FSUtils.getVideoFile(context, this.id).getAbsolutePath();
+        }
     }
 }
