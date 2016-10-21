@@ -16,6 +16,8 @@ public class TripActivity extends AppCompatActivity {
 
     private static final String TAG = "TripActivity";
 
+    public static final String IS_FROM_AUTOSTART_EXTRA = "com.ridecam.TripActivity.IS_FROM_AUTOSTART_EXTRA";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
