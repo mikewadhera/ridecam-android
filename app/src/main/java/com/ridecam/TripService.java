@@ -38,6 +38,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     public static final int COMMAND_TOGGLE_TRIP = 2;
     public static final int COMMAND_IS_TRIP_IN_PROGRESS = 3;
     public static final int COMMAND_ALARM_LOW_STORAGE = 4;
+    public static final int COMMAND_SYSTEM_ONDISCONNECT_POWER = 5;
 
     public static final String RESULT_IS_TRIP_IN_PROGRESS = "isTripInProgressResult";
 
@@ -203,6 +204,10 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 handleLowStorageCheck();
                 break;
 
+            case COMMAND_SYSTEM_ONDISCONNECT_POWER:
+                handlePowerDisconnected();
+                break;
+
             default:
                 // TODO add logging
                 Log.e(TAG, "Cannot start service with illegal commands");
@@ -304,6 +309,12 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         stopTrip();
         flash(Copy.RIDE_LOW_STORAGE);
         foregroundTripActivity();
+    }
+
+    private void handlePowerDisconnected() {
+        if (isTripInProgress()) {
+            foregroundTripActivity();
+        }
     }
 
     public void startSummaryActivity(String tripId) {
