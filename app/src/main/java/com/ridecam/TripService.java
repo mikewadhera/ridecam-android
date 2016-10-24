@@ -293,7 +293,9 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     public void onCameraError() {
         // TODO add logging
         flash(Copy.CAMERA_ERROR);
-        foregroundTripActivity();
+        if (isTripInProgress()) {
+            foregroundTripActivity();
+        }
     }
 
     @Override
