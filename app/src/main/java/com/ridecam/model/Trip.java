@@ -85,17 +85,17 @@ public class Trip {
     }
 
     public void calculateMiles() {
-        double total = 0;
+        float totalMeters = 0;
         Coordinate lastCoordinate = null;
         for (Coordinate c : getCoordinates()) {
-            double distance = 0;
+            float distanceMeters = 0;
             if (lastCoordinate != null) {
-                distance = Utils.distance(c.latitude, c.longitude, lastCoordinate.latitude, lastCoordinate.longitude);
+                distanceMeters = Utils.distanceInMeters(c.latitude, c.longitude, lastCoordinate.latitude, lastCoordinate.longitude);
             }
-            total += distance;
+            totalMeters += distanceMeters;
             lastCoordinate = c;
         }
-        this.miles = Math.round(total);
+        this.miles = Utils.metersToMiles(totalMeters);
     }
 
     public String getDefaultName() {
