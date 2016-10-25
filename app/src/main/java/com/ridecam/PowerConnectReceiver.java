@@ -13,7 +13,7 @@ public class PowerConnectReceiver extends BroadcastReceiver {
         Log.d(TAG, "onReceive");
         String action = intent.getAction();
 
-        Intent autoStartTripActivityService = new Intent(context, AutostartTripActivityService.class);
+        Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
         if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
             context.startService(autoStartTripActivityService);
         } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {

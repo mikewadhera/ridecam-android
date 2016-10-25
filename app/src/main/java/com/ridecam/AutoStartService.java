@@ -21,11 +21,11 @@ import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 
-public class AutostartTripActivityService extends Service implements GoogleApiClient.ConnectionCallbacks, ResultCallback<Status>, GoogleApiClient.OnConnectionFailedListener {
+public class AutoStartService extends Service implements GoogleApiClient.ConnectionCallbacks, ResultCallback<Status>, GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String TAG = "AutostartTripService";
+    private static final String TAG = "AutoStartService";
 
-    public static final String ACTIVITY_DETECTION_EVENT = "AutostartTripActivityService.ACTIVITY_DETECTION_EVENT";
+    public static final String ACTIVITY_DETECTION_EVENT = "AutoStartService.ACTIVITY_DETECTION_EVENT";
 
     protected BroadcastReceiver mActivityDetectionReceiver;
     protected GoogleApiClient mGoogleApiClient;
@@ -87,7 +87,7 @@ public class AutostartTripActivityService extends Service implements GoogleApiCl
 
     // Intent we send for each activity detection
     private PendingIntent getActivityDetectionPendingIntent() {
-        Intent intent = new Intent(this, ActivityRecognitionIntentService.class);
+        Intent intent = new Intent(this, ActivityUpdateIntentService.class);
 
         // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
         // requestActivityUpdates() and removeActivityUpdates().
@@ -125,11 +125,11 @@ public class AutostartTripActivityService extends Service implements GoogleApiCl
         Log.d(TAG, "onConnectionFailed");
     }
 
-    public static class ActivityRecognitionIntentService extends IntentService {
+    public static class ActivityUpdateIntentService extends IntentService {
 
-        private static final String TAG = "ActivityRecService";
+        private static final String TAG = "ActivityUpdateIntentService";
 
-        public ActivityRecognitionIntentService() {
+        public ActivityUpdateIntentService() {
             super(TAG);
         }
 

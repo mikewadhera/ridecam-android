@@ -53,9 +53,9 @@
         <service
             android:name=".UploadService"
             android:exported="false" />
-        <service android:name=".AutostartTripActivityService"
+        <service android:name=".AutoStartService"
             android:exported="false" />
-        <service android:name="com.ridecam.AutostartTripActivityService$ActivityRecognitionIntentService"
+        <service android:name="com.ridecam.AutoStartService$ActivityUpdateIntentService"
             android:exported="false" />
 
         <activity
