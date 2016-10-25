@@ -122,6 +122,7 @@ public class CameraFragment extends Fragment {
                         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                         getActivity().startService(intent);
                         render();
+                        resumeAutoStartStop();
                     }
 
                     @Override
@@ -161,6 +162,7 @@ public class CameraFragment extends Fragment {
                 intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                 getActivity().startService(intent);
                 render();
+                resumeAutoStartStop();
 
             }
         }
@@ -231,10 +233,6 @@ public class CameraFragment extends Fragment {
                     } else {
                         Intent intent = new Intent(getActivity(), TripService.class);
                         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_TOGGLE_TRIP);
-                        intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
-                            @Override
-                            protected void onReceiveResult(int code, Bundle data) {}
-                        });
                         getActivity().startService(intent);
                     }
                 }
@@ -267,6 +265,23 @@ public class CameraFragment extends Fragment {
             }
         });
         getActivity().startService(intent);
+    }
+
+    public void resumeAutoStartStop() {
+        Intent autoIntent = getActivity().getIntent();
+
+        if (autoIntent != null) {
+            if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTART_EXTRA, false)) {
+                Intent intent = new Intent(getActivity(), TripService.class);
+                intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ON_AUTOSTART);
+                getActivity().startService(intent);
+            } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
+                Intent intent = new Intent(getActivity(), TripService.class);
+                intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ON_AUTOSTOP);
+                getActivity().startService(intent);
+            }
+            getActivity().setIntent(null);
+        }
     }
 
     private void manuallyRotatePreviewIfNeeded() {

@@ -1,6 +1,7 @@
 package com.ridecam;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.view.LayoutInflaterCompat;
@@ -17,6 +18,13 @@ public class TripActivity extends AppCompatActivity {
     private static final String TAG = "TripActivity";
 
     public static final String IS_FROM_AUTOSTART_EXTRA = "com.ridecam.TripActivity.IS_FROM_AUTOSTART_EXTRA";
+    public static final String IS_FROM_AUTOSTOP_EXTRA = "com.ridecam.TripActivity.IS_FROM_AUTOSTOP_EXTRA";
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

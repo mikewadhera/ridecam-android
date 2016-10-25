@@ -38,7 +38,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     public static final int COMMAND_TOGGLE_TRIP = 2;
     public static final int COMMAND_IS_TRIP_IN_PROGRESS = 3;
     public static final int COMMAND_ALARM_LOW_STORAGE = 4;
-    public static final int COMMAND_SYSTEM_ONDISCONNECT_POWER = 5;
+    public static final int COMMAND_ON_AUTOSTOP = 5;
+    public static final int COMMAND_ON_AUTOSTART = 6;
 
     public static final String RESULT_IS_TRIP_IN_PROGRESS = "isTripInProgressResult";
 
@@ -188,8 +189,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             case COMMAND_TOGGLE_TRIP:
                 toggleTrip();
                 reRenderActivity();
-                receiver = intent.getParcelableExtra(RESULT_RECEIVER);
-                receiver.send(0, null);
                 break;
 
             case COMMAND_IS_TRIP_IN_PROGRESS:
@@ -204,8 +203,14 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 handleLowStorageCheck();
                 break;
 
-            case COMMAND_SYSTEM_ONDISCONNECT_POWER:
-                handlePowerDisconnected();
+            case COMMAND_ON_AUTOSTOP:
+                handleAutoStop();
+                reRenderActivity();
+                break;
+
+            case COMMAND_ON_AUTOSTART:
+                handleAutoStart();
+                reRenderActivity();
                 break;
 
             default:
@@ -313,9 +318,15 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         foregroundTripActivity();
     }
 
-    private void handlePowerDisconnected() {
+    private void handleAutoStop() {
         if (isTripInProgress()) {
-            foregroundTripActivity();
+            stopTrip();
+        }
+    }
+
+    private void handleAutoStart() {
+        if (!isTripInProgress()) {
+            startTrip();
         }
     }
 
