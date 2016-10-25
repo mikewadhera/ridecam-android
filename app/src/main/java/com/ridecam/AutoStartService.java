@@ -138,7 +138,7 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
             Log.d(TAG, "onHandleIntent");
             ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
 
-            Log.e(TAG, result.getMostProbableActivity().toString());
+            Log.d(TAG, result.getMostProbableActivity().toString());
 
             if (result.getMostProbableActivity().getType() == DetectedActivity.IN_VEHICLE &&
                     result.getMostProbableActivity().getConfidence() >= 50) {
