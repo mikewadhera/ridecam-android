@@ -17,6 +17,9 @@ public class PowerDisconnectReceiver extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
+            // Check if we are recording, we don't want to foreground the app if not
+            // NOTE: The only place we start trip service not necessarily before trip activity
+            // *May* cause edge case where service was started but front-end never initialized
             final Intent checkInProgressIntent = new Intent(context, TripService.class);
             checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
             checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
@@ -31,8 +34,6 @@ public class PowerDisconnectReceiver extends BroadcastReceiver {
                     }
                 }
             });
-            // NOTE: The only place we start trip service not necessarily before trip activity
-            // *May* cause edge case where service was started but front-end never initialized
             context.startService(checkInProgressIntent);
         }
     }

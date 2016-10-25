@@ -38,8 +38,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     public static final int COMMAND_TOGGLE_TRIP = 2;
     public static final int COMMAND_IS_TRIP_IN_PROGRESS = 3;
     public static final int COMMAND_ALARM_LOW_STORAGE = 4;
-    public static final int COMMAND_ON_AUTOSTOP = 5;
-    public static final int COMMAND_ON_AUTOSTART = 6;
+    public static final int COMMAND_ON_AUTOSTART = 5;
 
     public static final String RESULT_IS_TRIP_IN_PROGRESS = "isTripInProgressResult";
 
@@ -201,11 +200,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
             case COMMAND_ALARM_LOW_STORAGE:
                 handleLowStorageCheck();
-                break;
-
-            case COMMAND_ON_AUTOSTOP:
-                handleAutoStop();
-                reRenderActivity();
                 break;
 
             case COMMAND_ON_AUTOSTART:

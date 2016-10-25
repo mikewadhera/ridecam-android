@@ -276,9 +276,8 @@ public class CameraFragment extends Fragment {
                 intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ON_AUTOSTART);
                 getActivity().startService(intent);
             } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
-                Intent intent = new Intent(getActivity(), TripService.class);
-                intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ON_AUTOSTOP);
-                getActivity().startService(intent);
+                // Confirm before automatically stopping
+                toggleRecording(true);
             }
             getActivity().setIntent(null);
         }

@@ -17,7 +17,7 @@ public class PowerConnectReceiver extends BroadcastReceiver {
         if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
             context.startService(autoStartTripActivityService);
         } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
-            context.stopService(autoStartTripActivityService);
+            context.stopService(autoStartTripActivityService); // Keeps connect/disconnect code mutually exclusive
         }
     }
 
