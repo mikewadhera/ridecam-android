@@ -31,6 +31,7 @@ public class Trip {
     private List<Coordinate> coordinates;
     private String videoUrl;
     private String name;
+    private boolean starred;
 
     public static String allocateId() {
         DatabaseReference db = FirebaseDatabase.getInstance().getReference();
@@ -139,5 +140,25 @@ public class Trip {
         } else {
             return FSUtils.getVideoFile(context, this.id).getAbsolutePath();
         }
+    }
+
+    public void setStarred(boolean starred) {
+        this.starred = starred;
+    }
+
+    public boolean isStarred() {
+        return starred;
+    }
+
+    public boolean isRecording() {
+        return this.endTimestamp == 0L;
+    }
+
+    public boolean isUploaded() {
+        return this.videoUrl != null;
+    }
+
+    public boolean isValid() {
+        return this.startTimestamp > 0L;
     }
 }

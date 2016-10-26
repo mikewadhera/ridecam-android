@@ -33,6 +33,8 @@ public class Knobs {
 
     public static final long LOW_STORAGE_ALARM_INTERVAL = AlarmManager.INTERVAL_FIFTEEN_MINUTES; // Must be AM constant
 
+    public static final String VIDEO_UPLOADS_BUCKET = "gs://ridecam-b2023.appspot.com";
+
     public static int getMaximumRecordingFileSizeBytes(Context context) {
         double factor = 0.95; // 95%
         return (int)Math.floor(factor * FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(context).getPath()));

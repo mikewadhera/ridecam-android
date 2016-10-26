@@ -36,14 +36,18 @@ public abstract class DB {
 
     public Trip mapSimpleTrip(DataSnapshot dataSnapshot) {
         Trip trip = new Trip(dataSnapshot.getKey());
-        trip.setStartTimestamp((long)dataSnapshot.child("t_start").getValue()) ;
-        trip.setEndTimestamp((long)dataSnapshot.child("t_end").getValue());
+        Object ts = dataSnapshot.child("t_start").getValue();
+        if (ts != null) trip.setStartTimestamp((long)ts);
+        Object te = dataSnapshot.child("t_end").getValue();
+        if (te != null) trip.setEndTimestamp((long)te);
         Object m = dataSnapshot.child("m").getValue();
         if (m != null) trip.setMiles((long)m);
         Object n = dataSnapshot.child("n").getValue();
         if (n != null) trip.setName((String)n);
         Object v = dataSnapshot.child("h264_video_url").getValue();
         if (v != null) trip.setVideoUrl((String)v);
+        Object s = dataSnapshot.child("s").getValue();
+        if (s != null) trip.setStarred((boolean)s);
         return trip;
     }
 
@@ -63,6 +67,7 @@ public abstract class DB {
             tripMap.put("n", mTrip.getDefaultName());
             mTrip.calculateMiles();
             tripMap.put("m", mTrip.getMiles());
+            if (mTrip.isStarred()) tripMap.put("s", true);
 
             mTripsRef.child(mTrip.getId()).setValue(tripMap);
 
