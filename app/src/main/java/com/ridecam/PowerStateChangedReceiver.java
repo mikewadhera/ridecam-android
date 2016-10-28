@@ -8,18 +8,27 @@ import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 
-public class PowerDisconnectReceiver extends BroadcastReceiver {
+public class PowerStateChangedReceiver extends BroadcastReceiver {
 
-    private static final String TAG = "PowerDisconnectReceiver";
+    private static final String TAG = "PowerStateChangedReceiver";
 
     public void onReceive(final Context context , Intent intent) {
         Log.d(TAG, "onReceive");
         String action = intent.getAction();
 
-        if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
-            // Check if we are recording, we don't want to foreground the app if not
-            // NOTE: The only place we start trip service not necessarily before trip activity
-            // *May* cause edge case where service was started but front-end never initialized
+        if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
+
+            Log.d(TAG, "Intent Action: ACTION_POWER_CONNECTED");
+            Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
+            context.startService(autoStartTripActivityService);
+
+        } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
+            Log.d(TAG, "Intent Action: ACTION_POWER_DISCONNECTED");
+
+            Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
+            context.stopService(autoStartTripActivityService);
+
+            // Only present activity / end trip dialog if currently recording
             final Intent checkInProgressIntent = new Intent(context, TripService.class);
             checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
             checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
@@ -27,10 +36,13 @@ public class PowerDisconnectReceiver extends BroadcastReceiver {
                 protected void onReceiveResult(int code, Bundle data) {
                     boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
                     if (isInProgress) {
+                        Log.d(TAG, "Recording in progress - foregrounding");
                         Intent activity = new Intent(context, TripActivity.class);
                         activity.putExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, true);
                         activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         context.startActivity(activity);
+                    } else {
+                        Log.d(TAG, "No recording in progress");
                     }
                 }
             });
