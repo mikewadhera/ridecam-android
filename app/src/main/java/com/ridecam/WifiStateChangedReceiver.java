@@ -5,8 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
 import android.util.Log;
+
+import com.ridecam.wifi.Utils;
 
 public class WifiStateChangedReceiver extends BroadcastReceiver {
 
@@ -15,20 +16,13 @@ public class WifiStateChangedReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, final Intent intent) {
         Log.d(TAG, "onReceive");
-        ConnectivityManager cm =
-                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isConnectedToWifi = activeNetwork != null &&
-                                        activeNetwork.isConnectedOrConnecting() &&
-                                            activeNetwork.getType() == ConnectivityManager.TYPE_WIFI;
-
-        if (isConnectedToWifi) {
-            context.stopService(new Intent(context, PauseUploadsService.class));
-            context.startService(new Intent(context, ResumeUploadsService.class));
+        if (Utils.isConnectedToWifi(context)) {
+            context.startService(new Intent(context, UploadService.class));
         } else {
-            context.stopService(new Intent(context, ResumeUploadsService.class));
-            context.startService(new Intent(context, PauseUploadsService.class));
+            Intent stopIntent = new Intent(context, UploadService.class);
+            stopIntent.setAction(UploadService.ACTION_PAUSE_ALL_TASKS);
+            context.startService(stopIntent);
         }
     }
 
