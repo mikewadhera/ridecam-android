@@ -229,6 +229,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
                 showForegroundNotification("ON");
+                flash(Copy.RIDE_START);
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());
                 if (mLastCoordinate != null) {

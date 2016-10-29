@@ -247,7 +247,6 @@ public class CameraFragment extends Fragment {
     public void render() {
         final Button buttonView = (Button)mRootView.findViewById(R.id.record_button);
         final View previewView = mRootView.findViewById(R.id.record_frame);
-        final TextView offOnView = (TextView)mRootView.findViewById(R.id.off_view);
 
         Intent intent = new Intent(getActivity(), TripService.class);
         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
@@ -259,12 +258,10 @@ public class CameraFragment extends Fragment {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
                     buttonView.setText("■");
-                    offOnView.setText("ON");
                 } else {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
                     buttonView.setText("");
-                    offOnView.setText("OFF");
                 }
             }
         });

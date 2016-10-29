@@ -6,8 +6,6 @@ public class Copy {
 
     public static final String RIDE_START_FAIL = "Ridecam ERROR";
 
-    public static final String RIDE_FINISH = "Ridecam OFF";
-
     public static final String RIDE_INTERRUPTED = "Ridecam STOPPED";
 
     public static final String RIDE_LOW_STORAGE = "Ridecam STOPPED (Low Space)";
