@@ -6,10 +6,13 @@ import android.os.Environment;
 import android.os.StatFs;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.comparator.NameFileComparator;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 public class FSUtils {
 
@@ -38,25 +41,18 @@ public class FSUtils {
         return bytesAvailable;
     }
 
-    public static File[] getVideoFilesOldestFirst(Context context) {
+    public static List<String> getVideoFileAbsolutePathsAscendingByName(Context context) {
         File[] files = FSUtils.getVideoDirectory(context).listFiles();
-        Arrays.sort(files, new Comparator<File>() {
-            @Override
-            public int compare(File f1, File f2) {
-                if (f1.lastModified() > f2.lastModified()) {
-                    return -1;
-                } else if (f1.lastModified() < f2.lastModified()) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-        });
-        return files;
+        Arrays.sort(files, NameFileComparator.NAME_COMPARATOR);
+        ArrayList<String> paths = new ArrayList<>();
+        for (File file : files) {
+            paths.add(file.getAbsolutePath());
+        }
+        return paths;
     }
 
-    public static String getBasename(File file) {
-        return FilenameUtils.getBaseName(file.getAbsolutePath());
+    public static String getBasename(String path) {
+        return FilenameUtils.getBaseName(path);
     }
 
     public static void deleteFile(File file) {

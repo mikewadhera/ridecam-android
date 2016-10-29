@@ -21,7 +21,7 @@ public class WifiStateChangedReceiver extends BroadcastReceiver {
             context.startService(new Intent(context, UploadService.class));
         } else {
             Intent stopIntent = new Intent(context, UploadService.class);
-            stopIntent.setAction(UploadService.ACTION_PAUSE_ALL_TASKS);
+            stopIntent.setAction(UploadService.ACTION_PAUSE);
             context.startService(stopIntent);
         }
     }

@@ -7,6 +7,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.Utils;
 
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -138,8 +139,12 @@ public class Trip {
         if (this.videoUrl != null) {
             return this.videoUrl;
         } else {
-            return FSUtils.getVideoFile(context, this.id).getAbsolutePath();
+            return getLocalFile(context).getAbsolutePath();
         }
+    }
+
+    public File getLocalFile(Context context) {
+        return FSUtils.getVideoFile(context, this.id);
     }
 
     public void setStarred(boolean starred) {
@@ -154,11 +159,11 @@ public class Trip {
         return this.endTimestamp == 0L;
     }
 
-    public boolean isUploaded() {
+    public boolean hasUploaded() {
         return this.videoUrl != null;
     }
 
     public boolean isValid() {
-        return this.startTimestamp > 0L;
+        return id != null && this.startTimestamp > 0L;
     }
 }

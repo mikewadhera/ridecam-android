@@ -35,6 +35,9 @@ public abstract class DB {
     }
 
     public Trip mapSimpleTrip(DataSnapshot dataSnapshot) {
+        if (dataSnapshot == null || dataSnapshot.getKey() == null) {
+            return null;
+        }
         Trip trip = new Trip(dataSnapshot.getKey());
         Object ts = dataSnapshot.child("t_start").getValue();
         if (ts != null) trip.setStartTimestamp((long)ts);
@@ -160,6 +163,40 @@ public abstract class DB {
                 public void onCancelled(DatabaseError databaseError) {}
             });
         }
+
+    }
+
+    public static class RangeQuerySimpleTrip extends DB {
+
+        public interface ResultListener {
+            void onResult(List<Trip> trips);
+        }
+
+        private String mStartId;
+        private String mEndId;
+
+        public RangeQuerySimpleTrip(String userId, String startId, String endId) {
+            super(userId);
+            mStartId = startId;
+            mEndId = endId;
+        }
+
+        public void runAsync(final SimpleTripRangeQuery.ResultListener resultListener) {
+            mTripsRef.startAt(mStartId).endAt(mEndId).orderByKey().addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    ArrayList<Trip> trips = new ArrayList<Trip>();
+                    for (DataSnapshot childDataSnapshot : dataSnapshot.getChildren()) {
+                        trips.add(mapSimpleTrip(childDataSnapshot));
+                    }
+                    resultListener.onResult(trips);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            });
+        }
+
 
     }
 

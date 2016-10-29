@@ -1,6 +1,5 @@
 package com.ridecam;
 
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -15,14 +14,8 @@ import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageMetadata;
@@ -35,6 +28,7 @@ import com.ridecam.model.Trip;
 import com.ridecam.wifi.Utils;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,67 +38,37 @@ import java.util.List;
  State:
 
     1. Filesystem
-        We treat FS as 'inbox' of new uploads since we remove files after uploads complete
+        We treat FS as LIFO queue of new uploads since we remove files after uploads complete
 
     2. FirebaseStorage
         getActiveUploadTasks() holds all in-flight uploads
-        We can use getName() on a upload to see if a particular Trip ID uploading
-        Since this is a global singleton we can call from an Activity to show upload state
-        by attaching a scoped progress listener with task.addOnSuccessListener(activity)
-        New uploads are enqueued with putFile()
 
     3. FirebaseDB
-        Need to check Trip complete so we don't upload video file while recording
-        We also store the download URL in the Trip when upload completes
+        Need to check Trip complete (so we don't upload video file mid-recording)
+        We also store the download URL in the Trip model when upload finishes
 
     4. SharedPreferences
-        We store session ID here to resume uploads across process restarts
-
-    5. mNumTasks
-        Counter for in-flight active tasks. When it drops to 0 we stop service
+        We store session ID here to resume uploads across restarts
 
  **/
 
-public class UploadService extends Service {
+interface UploadQueueListener {
+    void onDequeueUploadQueue(Trip trip);
+}
+
+public class UploadService extends Service implements UploadQueueListener {
 
     public static final String TAG = UploadService.class.getSimpleName();
 
     private static final int NOTIFICATION_ID = 1;
 
-    public static final String ACTION_PAUSE_ALL_TASKS = "ACTION_PAUSE_ALL_TASKS";
-
-    interface FileListener {
-        void onDequeue(String tripId, File file, boolean isStarred);
-    }
+    public static final String ACTION_PAUSE = "ACTION_PAUSE";
 
     private StorageReference mStorageRef;
-    private FirebaseAuth mAuth;
     private SharedPreferences mSharedPrefs;
-    private int mNumTasks = 0;
 
     public UploadService() {
         mStorageRef = FirebaseStorage.getInstance().getReferenceFromUrl(Knobs.VIDEO_UPLOADS_BUCKET).child("videos");
-        mAuth = FirebaseAuth.getInstance();
-    }
-
-    public void taskStarted() {
-        changeNumberOfTasks(1);
-    }
-
-    public void taskCompletedOrFailedOrPaused() {
-        changeNumberOfTasks(-1);
-    }
-
-    private synchronized void changeNumberOfTasks(int delta) {
-        Log.d(TAG, "changeNumberOfTasks:" + mNumTasks + ":" + delta);
-        mNumTasks += delta;
-
-        // If there are no tasks left, stop the service
-        if (mNumTasks <= 0) {
-            Log.d(TAG, "stopping");
-            stopForeground(true);
-            stopSelf();
-        }
     }
 
     @Override
@@ -120,92 +84,9 @@ public class UploadService extends Service {
 
         mSharedPrefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
 
-        dequeue(new FileListener() {
-            @Override
-            public void onDequeue(final String tripId, final File file, final boolean isStarred) {
-
-                final String sessionIdKey = tripId + "-upload-session-uri";
-                StorageReference remoteFileRef = mStorageRef.child(file.getName());
-                Uri localFileRef = Uri.fromFile(file);
-
-                Log.d(TAG, "Starting upload task for trip: " + tripId);
-
-                final UploadTask uploadTask;
-                String resumedSessionId = mSharedPrefs.getString(sessionIdKey, null);
-                if (resumedSessionId != null) {
-                    Log.d(TAG, "Previous session detected, resuming upload");
-                    Uri resumedSessionUri = Uri.parse(resumedSessionId);
-                    uploadTask = remoteFileRef.putFile(localFileRef, new StorageMetadata.Builder().build(), resumedSessionUri);
-                } else {
-                    Log.d(TAG, "No previous session detected");
-                    uploadTask = remoteFileRef.putFile(localFileRef);
-                }
-
-                taskStarted();
-
-                uploadTask.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // TODO add logging
-                        Log.e(TAG, "onFailure");
-                        Log.d(TAG, "!!! Upload failed for trip: " + tripId);
-                        e.printStackTrace();
-
-                        // Forget session ID in case this was from resuming a timed out session
-                        mSharedPrefs.edit().remove(sessionIdKey).commit();
-
-                        taskCompletedOrFailedOrPaused();
-                    }
-                });
-
-                uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                        // Listen for session ID
-                        Uri sessionUri = taskSnapshot.getUploadSessionUri();
-                        if (sessionUri != null && mSharedPrefs.getString(sessionIdKey, null) == null) {
-                            Log.d(TAG, "Storing session ID in case app restarts or all tasks become paused from loss of wifi");
-                            String sessionId = sessionUri.toString();
-                            mSharedPrefs.edit().putString(sessionIdKey, sessionId).commit();
-                            Log.d(TAG, "Session ID stored for trip: " + tripId);
-                        }
-                    }
-                });
-
-                uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        Log.d(TAG, "onSuccess");
-                        Log.d(TAG, "Upload complete for trip: " + tripId);
-
-                        String downloadUrl = taskSnapshot.getDownloadUrl().toString();
-
-                        DB.SaveTripVideoDownloadURL saveTripVideoDownloadURL =
-                                new DB.SaveTripVideoDownloadURL(AuthUtils.getUserId(UploadService.this), tripId, downloadUrl);
-                        saveTripVideoDownloadURL.run();
-
-                        if (!isStarred) {
-                            Log.d(TAG, "Not starred. Deleting local file...");
-                            try {
-                                FSUtils.deleteFile(file);
-                                Log.d(TAG, "File deleted");
-                            } catch (Exception e) {
-                                // TODO add logging
-                                // bad place!
-                                e.printStackTrace();
-                            }
-                        } else {
-                            Log.d(TAG, "Starred trip. Not deleting local file");
-                        }
-
-                        taskCompletedOrFailedOrPaused();
-                    }
-                });
-
-            }
-        });
-
         showUploadProgressNotification();
+
+        dequeueUploadQueue(this);
     }
 
     @Override
@@ -224,99 +105,210 @@ public class UploadService extends Service {
             return START_NOT_STICKY;
         }
 
-        if (ACTION_PAUSE_ALL_TASKS.equals(intent.getAction())) {
-
-            // Best effort pause
-            if (mStorageRef.getActiveUploadTasks().size() > 0) {
-                final Intent checkInProgressIntent = new Intent(this, TripService.class);
-                checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
-                checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
-                    @Override
-                    protected void onReceiveResult(int code, Bundle data) {
-                        boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
-                        if (!isInProgress) {
-                            android.os.Process.killProcess(android.os.Process.myPid());
-                        } else {
-                            // TODO add logging
-                            Log.d(TAG, "Recording in progress. Not killing uploads");
-                        }
-                    }
-                });
-                startService(checkInProgressIntent);
-            }
-
+        if (ACTION_PAUSE.equals(intent.getAction())) {
+            pauseUploads();
         }
 
         return START_STICKY;
     }
 
-    // Calls fileListener for every file in videos directory in oldest-first order
-    // that is neither recording, already uploaded or actively resumed upload (not paused)
-    public void dequeue(final FileListener fileListener) {
+    // Calls queueListener with the latest completed recording in videos directory not uploaded/uploading
+    public void dequeueUploadQueue(final UploadQueueListener queueListener) {
 
-        final File[] files = FSUtils.getVideoFilesOldestFirst(this);
+        final List<String> filePaths = FSUtils.getVideoFileAbsolutePathsAscendingByName(this);
 
-        for (final File file : files) {
+        if (filePaths.size() == 0) {
+            Log.d(TAG, "No videos files");
+            return;
+        }
 
-            final String tripId = FSUtils.getBasename(file);
+        String startTripId = FSUtils.getBasename(filePaths.get(0));
+        String endTripId = FSUtils.getBasename(filePaths.get(filePaths.size()-1));
 
-            if (!hasUploadAlreadyResumed(tripId)) {
-                DB.LoadSimpleTrip tripLoader = new DB.LoadSimpleTrip(AuthUtils.getUserId(UploadService.this), tripId);
+        Log.d(TAG, "Loading trips: " + startTripId + " (start) " + endTripId + " (end)");
 
-                tripLoader.runAsync(new DB.LoadSimpleTrip.ResultListener() {
-                    @Override
-                    public void onResult(Trip trip) {
-                    if (trip.isValid()) {
+        DB.RangeQuerySimpleTrip tripsLoader = new DB.RangeQuerySimpleTrip(AuthUtils.getUserId(UploadService.this), startTripId, endTripId);
+        tripsLoader.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
+            @Override
+            public void onResult(List<Trip> trips) {
+                ArrayList<Trip> tripsQueue = new ArrayList<>();
+                for (Trip trip : trips) {
+                    if (trip != null && trip.isValid()) {
                         if (!trip.isRecording()) {
-                            if (!trip.isUploaded()) {
-                                try {
-                                    Log.d(TAG, "Dequeing next trip for upload: " + tripId);
-                                    fileListener.onDequeue(tripId, file, trip.isStarred());
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                    // TODO add logging
-                                }
+                            if (!hasAlreadyDequed(trip)) {
+                                Log.d(TAG, "Adding trip to upload queue: " + trip.getId());
+                                tripsQueue.add(trip);
                             } else {
-                                Log.d(TAG, "Skipping completed trip: " + tripId);
+                                Log.d(TAG, "Skipping already uploaded/uploading trip: " + trip.getId());
                             }
                         } else {
-                            Log.d(TAG, "Skipping currently recording trip: " + tripId);
+                            Log.d(TAG, "Skipping currently recording trip: " + trip.getId());
                         }
                     } else {
-                        Log.e(TAG, "Skipping invalid trip: " + tripId);
+                        Log.e(TAG, "Skipping invalid trip: " + trip.getId());
                         // TODO add logging
                     }
+                }
+                if (tripsQueue.size() > 0) {
+                    Trip dequeuedTrip = tripsQueue.get(tripsQueue.size()-1); // LIFO
+                    try {
+                        Log.d(TAG, "Dequeing next trip for upload: " + dequeuedTrip.getId());
+                        queueListener.onDequeueUploadQueue(dequeuedTrip);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // TODO add logging
                     }
-                });
-            } else {
-                Log.d(TAG, "Skipping already resumed trip: " + tripId);
+                } else {
+                    Log.d(TAG, "No more trips in queue, shutting down");
+                    stopForeground(true);
+                    stopSelf();
+                }
             }
+        });
 
-        }
     }
 
-    public boolean hasUploadAlreadyResumed(String id) {
+    @Override
+    public void onDequeueUploadQueue(final Trip trip) {
+        Log.d(TAG, "Starting upload for trip: " + trip.getId());
+        final UploadTask uploadTask;
+
+        final File file = trip.getLocalFile(this);
+        StorageReference remoteFileRef = mStorageRef.child(file.getName());
+        Uri localFileRef = Uri.fromFile(file);
+
+        String resumedSessionId = getStoredUploadSessionId(trip);
+        if (resumedSessionId != null) {
+            Log.d(TAG, "Previous session detected, resuming upload");
+            Uri resumedSessionUri = Uri.parse(resumedSessionId);
+            uploadTask = remoteFileRef.putFile(localFileRef, new StorageMetadata.Builder().build(), resumedSessionUri);
+        } else {
+            Log.d(TAG, "No previous session detected");
+            uploadTask = remoteFileRef.putFile(localFileRef);
+        }
+
+        uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                // Listen for session ID
+                Uri sessionUri = taskSnapshot.getUploadSessionUri();
+                if (sessionUri != null && getStoredUploadSessionId(trip) == null) {
+                    Log.d(TAG, "Storing session ID in case app restarts or upload pauses from loss of wifi");
+                    String sessionId = sessionUri.toString();
+                    storeUploadSessionId(trip, sessionId);
+                    Log.d(TAG, "Session ID stored for trip: " + trip.getId());
+                }
+            }
+        });
+
+        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+            Log.d(TAG, "onSuccess");
+            Log.d(TAG, "Upload complete for trip: " + trip.getId());
+
+            clearUploadSessionId(trip);
+
+            String downloadUrl = taskSnapshot.getDownloadUrl().toString();
+
+            DB.SaveTripVideoDownloadURL saveTripVideoDownloadURL =
+                    new DB.SaveTripVideoDownloadURL(AuthUtils.getUserId(UploadService.this), trip.getId(), downloadUrl);
+            saveTripVideoDownloadURL.run();
+
+            if (!trip.isStarred()) {
+                Log.d(TAG, "Not starred. Deleting local file...");
+                try {
+                    FSUtils.deleteFile(file);
+                    Log.d(TAG, "File deleted");
+                } catch (Exception e) {
+                    // TODO add logging
+                    // bad place!
+                    e.printStackTrace();
+                }
+            } else {
+                Log.d(TAG, "Starred trip. Not deleting local file");
+            }
+
+            dequeueUploadQueue(UploadService.this);
+            }
+        });
+
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+            // TODO add logging
+            Log.e(TAG, "onFailure");
+            Log.d(TAG, "!!! Upload failed for trip: " + trip.getId());
+            e.printStackTrace();
+
+            // Forget session ID in case this was from resuming a timed out session
+            clearUploadSessionId(trip);
+            }
+        });
+    }
+
+    public boolean hasAlreadyDequed(Trip trip) {
+        return isUploadingTrip(trip.getId()) || trip.hasUploaded();
+    }
+
+    public boolean isUploadingTrip(String id) {
         List<UploadTask> tripUploads = mStorageRef.child(id).getActiveUploadTasks();
         if (tripUploads.size() > 0) {
-            return tripUploads.get(0).isInProgress();
+            return true;
         } else {
             return false;
         }
     }
 
+    public void pauseUploads() {
+        // Best effort pause
+        // HACK: Since cancel() and pause() are broken in Firebase
+        // we kill the current process if we are not currently recording
+        if (mStorageRef.getActiveUploadTasks().size() > 0) {
+            final Intent checkInProgressIntent = new Intent(this, TripService.class);
+            checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
+            checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+                @Override
+                protected void onReceiveResult(int code, Bundle data) {
+                    boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
+                    if (!isInProgress) {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                    } else {
+                        // TODO add logging
+                        Log.d(TAG, "Recording in progress. Not pausing uploads");
+                    }
+                }
+            });
+            startService(checkInProgressIntent);
+        }
+    }
+
+    public String getStoredUploadSessionId(Trip trip) {
+        return mSharedPrefs.getString(uploadSessionIdKey(trip), null);
+    }
+
+    public void storeUploadSessionId(Trip trip, String sessionId) {
+        mSharedPrefs.edit().putString(uploadSessionIdKey(trip), sessionId).commit();
+    }
+
+    public void clearUploadSessionId(Trip trip) {
+        mSharedPrefs.edit().remove(uploadSessionIdKey(trip)).commit();
+    }
+
+    public String uploadSessionIdKey(Trip trip) {
+        return trip.getId() + "-upload-session-uri";
+    }
+
     private void showUploadProgressNotification() {
         android.support.v4.app.NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setContentTitle(getString(R.string.app_name))
-                .setContentText("Uploading...")
+                .setContentText(Copy.UPLOAD_RUNNING_NOTIFICATION)
                 .setSmallIcon(R.drawable.cast_ic_notification_small_icon)
                 .setProgress(0, 0, true)
                 .setOngoing(true)
                 .setAutoCancel(false);
 
-        NotificationManager manager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        manager.notify(NOTIFICATION_ID, builder.build());
+        startForeground(NOTIFICATION_ID, builder.build());
     }
 
     @Nullable

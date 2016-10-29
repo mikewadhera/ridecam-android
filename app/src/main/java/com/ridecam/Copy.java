@@ -16,4 +16,6 @@ public class Copy {
 
     public static final String RIDE_STOP_CONFIRM = "End Trip?";
 
+    public static final String UPLOAD_RUNNING_NOTIFICATION = "Syncing";
+
 }
