@@ -123,7 +123,7 @@ public class UploadService extends Service {
 
         Log.d(TAG, "Loading trips: " + startTripId + " (start) " + endTripId + " (end)");
 
-        DB.RangeQuerySimpleTrip tripsLoader = new DB.RangeQuerySimpleTrip(AuthUtils.getUserId(UploadService.this), startTripId, endTripId);
+        DB.SimpleTripRangeQuery tripsLoader = new DB.SimpleTripRangeQuery(AuthUtils.getUserId(UploadService.this), startTripId, endTripId);
         tripsLoader.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
             @Override
             public void onResult(List<Trip> trips) {

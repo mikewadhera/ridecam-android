@@ -166,40 +166,6 @@ public abstract class DB {
 
     }
 
-    public static class RangeQuerySimpleTrip extends DB {
-
-        public interface ResultListener {
-            void onResult(List<Trip> trips);
-        }
-
-        private String mStartId;
-        private String mEndId;
-
-        public RangeQuerySimpleTrip(String userId, String startId, String endId) {
-            super(userId);
-            mStartId = startId;
-            mEndId = endId;
-        }
-
-        public void runAsync(final SimpleTripRangeQuery.ResultListener resultListener) {
-            mTripsRef.startAt(mStartId).endAt(mEndId).orderByKey().addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    ArrayList<Trip> trips = new ArrayList<Trip>();
-                    for (DataSnapshot childDataSnapshot : dataSnapshot.getChildren()) {
-                        trips.add(mapSimpleTrip(childDataSnapshot));
-                    }
-                    resultListener.onResult(trips);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {}
-            });
-        }
-
-
-    }
-
     public static class UpdateTripName extends DB {
 
         private String mId;
@@ -308,7 +274,7 @@ public abstract class DB {
     public static class SimpleTripRangeQuery extends DB {
 
         public interface ResultListener {
-            public void onResult(List<Trip> trips);
+            void onResult(List<Trip> trips);
         }
 
         private String mStartTripId;
