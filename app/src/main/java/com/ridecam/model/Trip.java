@@ -22,7 +22,6 @@ public class Trip {
         public double longitude;
         public long timestamp;
         public float bearing;
-        public String title;
     }
 
     private String id;

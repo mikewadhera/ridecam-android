@@ -11,7 +11,7 @@ import com.ridecam.Knobs;
 public class GPSEngine implements android.location.LocationListener {
 
     public interface LocationListener {
-        void onLocationUpdate(long timestamp, double latitude, double longitude, float bearing, String title);
+        void onLocationUpdate(long timestamp, double latitude, double longitude, float bearing);
     }
 
     private Context mContext;
@@ -48,20 +48,7 @@ public class GPSEngine implements android.location.LocationListener {
 
     @Override
     public void onLocationChanged(final Location location) {
-        Intent intent = new Intent(mContext, ReverseGeocoder.class);
-        intent.putExtra(ReverseGeocoder.LOCATION_DATA_EXTRA, location);
-        intent.putExtra(ReverseGeocoder.RECEIVER, new android.os.ResultReceiver(null) {
-            @Override
-            protected void onReceiveResult(int resultCode, Bundle resultData) {
-                String result = resultData.getString(ReverseGeocoder.RESULT_DATA_KEY);
-                onLocationGeocoded(location, result);
-            }
-        });
-        mContext.startService(intent);
-    }
-
-    public void onLocationGeocoded(Location location, String address) {
-        mLocationListener.onLocationUpdate(location.getTime(), location.getLatitude(), location.getLongitude(), location.getBearing(), address);
+        mLocationListener.onLocationUpdate(location.getTime(), location.getLatitude(), location.getLongitude(), location.getBearing());
     }
 
     @Override

@@ -82,7 +82,6 @@ public abstract class DB {
                 coordinateMap.put("y", c.longitude);
                 coordinateMap.put("z", c.timestamp);
                 coordinateMap.put("w", c.bearing);
-                coordinateMap.put("a", c.title);
                 locationRef.push().setValue(coordinateMap);
             }
         }

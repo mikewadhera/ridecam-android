@@ -351,13 +351,12 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     }
 
     @Override
-    public void onLocationUpdate(long timestamp, double latitude, double longitude, float bearing, String title) {
+    public void onLocationUpdate(long timestamp, double latitude, double longitude, float bearing) {
         Trip.Coordinate coordinate = new Trip.Coordinate();
         coordinate.latitude = latitude;
         coordinate.longitude = longitude;
         coordinate.timestamp = timestamp;
         coordinate.bearing = bearing;
-        coordinate.title = title;
         if (mTrip != null) {
             mTrip.addCoordinate(coordinate);
         } else {
