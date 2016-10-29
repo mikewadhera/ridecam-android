@@ -141,7 +141,7 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
             Log.d(TAG, result.getMostProbableActivity().toString());
 
             if (result.getMostProbableActivity().getType() == DetectedActivity.IN_VEHICLE &&
-                    result.getMostProbableActivity().getConfidence() >= 50) {
+                    result.getMostProbableActivity().getConfidence() >= Knobs.AUTOSTART_IN_VEHICLE_MIN_CONFIDENCE) {
                 Intent localIntent = new Intent(ACTIVITY_DETECTION_EVENT);
                 LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
             }

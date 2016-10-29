@@ -29,14 +29,16 @@ public class Knobs {
 
     public static final int GPS_MIN_DISTANCE_CHANGE_M = 20; // 20 meters
 
-    public static final int LOW_STORAGE_FLOOR_BYTES = 157286400; // 30 minutes (150MB)
+    public static final int LOW_STORAGE_FLOOR_BYTES = 524288000; // 500 MB (< 2 hrs)
 
     public static final long LOW_STORAGE_ALARM_INTERVAL = AlarmManager.INTERVAL_FIFTEEN_MINUTES; // Must be AM constant
 
     public static final String VIDEO_UPLOADS_BUCKET = "gs://ridecam-b2023.appspot.com";
 
+    public static final int AUTOSTART_IN_VEHICLE_MIN_CONFIDENCE = 55;
+
     public static int getMaximumRecordingFileSizeBytes(Context context) {
-        double factor = 0.95; // 95%
+        double factor = 0.97; // 97%
         return (int)Math.floor(factor * FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(context).getPath()));
     }
 
