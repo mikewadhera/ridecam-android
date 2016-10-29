@@ -238,6 +238,8 @@ public class UploadService extends Service {
 
             // Forget session ID in case this was from resuming a timed out session
             clearUploadSessionId(trip);
+
+            dequeueUploadQueue();
             }
         });
     }
