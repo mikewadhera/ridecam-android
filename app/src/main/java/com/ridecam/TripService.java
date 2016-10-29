@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
@@ -59,7 +60,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         Log.d(TAG, "onCreate");
 
         // Called after we've acquired all permissions required
-        showForegroundNotification("Not Recording");
+        showForegroundNotification("OFF");
     }
 
     @Override
@@ -227,7 +228,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
-                showForegroundNotification(Copy.RIDE_START);
+                showForegroundNotification("ON");
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());
                 if (mLastCoordinate != null) {
@@ -236,7 +237,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 startLowStorageAlarm();
             } else {
                 flash(Copy.RIDE_START_FAIL);
-                showForegroundNotification(Copy.RIDE_START_FAIL);
+                showForegroundNotification("OFF (ERROR)");
                 // TODO add logging
             }
         } else {
@@ -250,7 +251,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             if (!mRecorder.isRecording()) {
                 mRecorder = null;
                 stopLowStorageAlarm();
-                showForegroundNotification(Copy.RIDE_FINISH);
+                showForegroundNotification("OFF");
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
                     DB.Save saveCommand = new DB.Save(AuthUtils.getUserId(this), mTrip);
@@ -378,13 +379,14 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 showTaskIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Notification notification = new Notification.Builder(getApplicationContext())
+        android.support.v4.app.NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setContentIntent(contentIntent)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(contentText)
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(contentIntent)
-                .build();
-        startForeground(NOTIFICATION_ID, notification);
+                .setSmallIcon(R.drawable.cast_ic_notification_small_icon)
+                .setAutoCancel(false);
+
+        startForeground(NOTIFICATION_ID, builder.build());
     }
 
     private void flash(String text) {
