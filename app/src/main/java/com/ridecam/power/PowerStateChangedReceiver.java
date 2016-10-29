@@ -1,4 +1,4 @@
-package com.ridecam;
+package com.ridecam.power;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,6 +7,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.util.Log;
+
+import com.ridecam.AutoStartService;
+import com.ridecam.TripActivity;
+import com.ridecam.TripService;
 
 public class PowerStateChangedReceiver extends BroadcastReceiver {
 

@@ -25,7 +25,7 @@ import com.ridecam.auth.AuthUtils;
 import com.ridecam.db.DB;
 import com.ridecam.fs.FSUtils;
 import com.ridecam.model.Trip;
-import com.ridecam.wifi.Utils;
+import com.ridecam.net.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -52,11 +52,7 @@ import java.util.List;
 
  **/
 
-interface UploadQueueListener {
-    void onDequeueUploadQueue(Trip trip);
-}
-
-public class UploadService extends Service implements UploadQueueListener {
+public class UploadService extends Service {
 
     public static final String TAG = UploadService.class.getSimpleName();
 
@@ -86,7 +82,7 @@ public class UploadService extends Service implements UploadQueueListener {
 
         showUploadProgressNotification();
 
-        dequeueUploadQueue(this);
+        dequeueUploadQueue();
     }
 
     @Override
@@ -112,8 +108,8 @@ public class UploadService extends Service implements UploadQueueListener {
         return START_STICKY;
     }
 
-    // Calls queueListener with the latest completed recording in videos directory not uploaded/uploading
-    public void dequeueUploadQueue(final UploadQueueListener queueListener) {
+    // Calls onDequeueUploadQueue() with the latest completed recording in videos directory not uploaded/uploading
+    public void dequeueUploadQueue() {
 
         final List<String> filePaths = FSUtils.getVideoFileAbsolutePathsAscendingByName(this);
 
@@ -153,7 +149,7 @@ public class UploadService extends Service implements UploadQueueListener {
                     Trip dequeuedTrip = tripsQueue.get(tripsQueue.size()-1); // LIFO
                     try {
                         Log.d(TAG, "Dequeing next trip for upload: " + dequeuedTrip.getId());
-                        queueListener.onDequeueUploadQueue(dequeuedTrip);
+                        onDequeueUploadQueue(dequeuedTrip);
                     } catch (Exception e) {
                         e.printStackTrace();
                         // TODO add logging
@@ -168,7 +164,6 @@ public class UploadService extends Service implements UploadQueueListener {
 
     }
 
-    @Override
     public void onDequeueUploadQueue(final Trip trip) {
         Log.d(TAG, "Starting upload for trip: " + trip.getId());
         final UploadTask uploadTask;
@@ -190,14 +185,14 @@ public class UploadService extends Service implements UploadQueueListener {
         uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                // Listen for session ID
-                Uri sessionUri = taskSnapshot.getUploadSessionUri();
-                if (sessionUri != null && getStoredUploadSessionId(trip) == null) {
-                    Log.d(TAG, "Storing session ID in case app restarts or upload pauses from loss of wifi");
-                    String sessionId = sessionUri.toString();
-                    storeUploadSessionId(trip, sessionId);
-                    Log.d(TAG, "Session ID stored for trip: " + trip.getId());
-                }
+            // Listen for session ID
+            Uri sessionUri = taskSnapshot.getUploadSessionUri();
+            if (sessionUri != null && getStoredUploadSessionId(trip) == null) {
+                Log.d(TAG, "Storing session ID in case app restarts or upload pauses from loss of wifi");
+                String sessionId = sessionUri.toString();
+                storeUploadSessionId(trip, sessionId);
+                Log.d(TAG, "Session ID stored for trip: " + trip.getId());
+            }
             }
         });
 
@@ -229,7 +224,7 @@ public class UploadService extends Service implements UploadQueueListener {
                 Log.d(TAG, "Starred trip. Not deleting local file");
             }
 
-            dequeueUploadQueue(UploadService.this);
+            dequeueUploadQueue();
             }
         });
 

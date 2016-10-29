@@ -1,4 +1,4 @@
-package com.ridecam.wifi;
+package com.ridecam.net;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

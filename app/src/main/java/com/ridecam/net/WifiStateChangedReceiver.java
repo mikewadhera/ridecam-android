@@ -1,13 +1,11 @@
-package com.ridecam;
+package com.ridecam.net;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.util.Log;
 
-import com.ridecam.wifi.Utils;
+import com.ridecam.UploadService;
 
 public class WifiStateChangedReceiver extends BroadcastReceiver {
 
