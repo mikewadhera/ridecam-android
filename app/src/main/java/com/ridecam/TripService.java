@@ -394,7 +394,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
         if (recordStart) {
             builder.setSound(Uri.parse("android.resource://"
-                    + getPackageName() + "/" + R.raw.chime_495939803));
+                    + getPackageName() + "/" + R.raw.pad_glow_chime));
             builder.setSmallIcon(R.drawable.ic_stat_av_videocam);
         } else {
             builder.setSmallIcon(R.drawable.ic_stat_av_videocam_off);
