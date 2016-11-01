@@ -1,7 +1,6 @@
 package com.ridecam;
 
 import android.app.AlarmManager;
-import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -372,7 +371,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         }
     }
 
-    private void showForegroundNotification(String contentText, boolean playSound) {
+    private void showForegroundNotification(String contentText, boolean recordStart) {
         // Create intent that will bring our app to the front, as if it was tapped in the app
         // launcher
         Intent showTaskIntent = new Intent(getApplicationContext(), TripActivity.class);
@@ -390,13 +389,15 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 .setContentIntent(contentIntent)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(contentText)
-                .setSmallIcon(R.drawable.carpool)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.launcher))
                 .setAutoCancel(false);
 
-        if (playSound) {
+        if (recordStart) {
             builder.setSound(Uri.parse("android.resource://"
                     + getPackageName() + "/" + R.raw.chime_495939803));
+            builder.setSmallIcon(R.drawable.ic_stat_av_videocam);
+        } else {
+            builder.setSmallIcon(R.drawable.ic_stat_av_videocam_off);
         }
 
         startForeground(NOTIFICATION_ID, builder.build());
