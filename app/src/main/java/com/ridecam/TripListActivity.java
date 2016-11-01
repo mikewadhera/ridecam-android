@@ -35,6 +35,9 @@ public class TripListActivity extends AppCompatActivity {
     public static final String TRIPS_IS_STARRED_EXTRA = "com.ridecam.TripListActivity.TRIPS_IS_STARRED_EXTRA";
 
     public Trip[] mTrips;
+    private ListView mListView;
+    private String mStartId;
+    private String mEndId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,37 +51,46 @@ public class TripListActivity extends AppCompatActivity {
 
         mTrips = new Trip[]{};
 
-        final ListView listView = (ListView)findViewById(R.id.trip_list);
+        mListView = (ListView)findViewById(R.id.trip_list);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Trip trip = mTrips[mTrips.length-i-1];
                 Intent intent = new Intent(TripListActivity.this, PlayerActivity.class);
-                intent.putExtra(PlayerActivity.TRIP_ID_EXTRA, trip.getLocalOrRemoteVideoUrl(TripListActivity.this));
+                intent.putExtra(PlayerActivity.TRIP_ID_EXTRA, trip.getId());
+                intent.putExtra(PlayerActivity.TRIP_VIDEO_URL_EXTRA, trip.getLocalOrRemoteVideoUrl(TripListActivity.this));
                 startActivity(intent);
             }
         });
 
         Intent intent = getIntent();
+        mStartId = intent.getStringExtra(TRIP_START_ID_EXTRA);
+        mEndId = intent.getStringExtra(TRIP_END_ID_EXTRA);
 
         if (intent.getBooleanExtra(TRIPS_IS_STARRED_EXTRA, false)) {
             setTitle("Starred");
         } else {
             setTitle(intent.getStringExtra(TRIPS_TITLE_EXTRA));
-            DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(
-                    AuthUtils.getUserId(this),
-                    intent.getStringExtra(TRIP_START_ID_EXTRA),
-                    intent.getStringExtra(TRIP_END_ID_EXTRA));
-            command.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
-                @Override
-                public void onResult(List<Trip> trips) {
-                    mTrips = trips.toArray(new Trip[trips.size()]);
-                    final SimpleArrayAdapter adapter = new SimpleArrayAdapter(TripListActivity.this, mTrips);
-                    listView.setAdapter(adapter);
-                }
-            });
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(
+                AuthUtils.getUserId(this),
+                mStartId,
+                mEndId);
+        command.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
+            @Override
+            public void onResult(List<Trip> trips) {
+                mTrips = trips.toArray(new Trip[trips.size()]);
+                SimpleArrayAdapter adapter = new SimpleArrayAdapter(TripListActivity.this, mTrips);
+                mListView.setAdapter(adapter);
+            }
+        });
     }
 
     public class SimpleArrayAdapter extends ArrayAdapter<Trip> {

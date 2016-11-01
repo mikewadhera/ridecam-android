@@ -56,6 +56,7 @@ public class FSUtils {
     }
 
     public static void deleteFile(File file) {
+        if (!file.exists()) return;
         file.delete();
     }
 

@@ -18,7 +18,18 @@
         android:gravity="left"
         android:background="#00000000"
         android:textSize="40dp"
-        android:visibility="gone"
+        android:textColor="#d2ffffff"/>
+
+    <Button
+        android:id="@+id/delete_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:layout_gravity="right"
+        android:text="{gmd-delete}"
+        android:gravity="right"
+        android:background="#00000000"
+        android:textSize="36dp"
         android:textColor="#d2ffffff"/>
 
 </FrameLayout>

@@ -304,4 +304,36 @@ public abstract class DB {
         }
     }
 
+    public static class DeleteTrip extends DB {
+
+        public interface ResultListener {
+            void onResult();
+        }
+
+        private String mTripId;
+
+        public DeleteTrip(String userId, String tripId) {
+            super(userId);
+            mTripId = tripId;
+        }
+
+        public void runAsync(final ResultListener resultListener) {
+
+            mLocationsRef.child(mTripId).removeValue(new DatabaseReference.CompletionListener() {
+                @Override
+                public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                    mTripsRef.child(mTripId).removeValue(new DatabaseReference.CompletionListener() {
+                        @Override
+                        public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                            resultListener.onResult();
+                        }
+                    });
+                }
+            });
+
+        }
+
+
+    }
+
 }
