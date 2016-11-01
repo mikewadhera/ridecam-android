@@ -37,7 +37,7 @@
         android:layout_gravity="center_horizontal"
         fontPath="fonts/VAG-Rounded-Bold.ttf"
         android:gravity="center"
-        android:textColor="#e1ffffff"
+        android:textColor="#ffffff"
         android:textSize="32sp"
         android:layout_marginTop="40dp" />
 
@@ -51,7 +51,7 @@
         android:gravity="right"
         android:layout_gravity="top|right"
         android:textSize="30sp"
-        android:layout_marginTop="42dp"
+        android:layout_marginTop="45dp"
         android:layout_marginRight="45dp"/>
 
 </FrameLayout>
