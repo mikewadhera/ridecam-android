@@ -27,6 +27,7 @@ import android.widget.TextView;
 
 import com.github.vignesh_iopex.confirmdialog.Confirm;
 import com.github.vignesh_iopex.confirmdialog.Dialog;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
@@ -47,6 +48,7 @@ public class CameraFragment extends Fragment {
 
     private View mRootView;
     private BroadcastReceiver mReRenderReceiver;
+    private FirebaseAnalytics mAnalytics;
 
     public CameraFragment() {
     }
@@ -58,6 +60,8 @@ public class CameraFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        mAnalytics = FirebaseAnalytics.getInstance(getActivity());
+
         Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
 
@@ -196,6 +200,7 @@ public class CameraFragment extends Fragment {
         recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                mAnalytics.logEvent("MANUAL_RECORD_TOGGLE", null);
                 toggleRecording(true);
             }
         });
@@ -273,10 +278,12 @@ public class CameraFragment extends Fragment {
 
         if (autoIntent != null) {
             if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTART_EXTRA, false)) {
+                mAnalytics.logEvent("AUTO_RECORD_START", null);
                 Intent intent = new Intent(getActivity(), TripService.class);
                 intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ON_AUTOSTART);
                 getActivity().startService(intent);
             } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
+                mAnalytics.logEvent("AUTO_RECORD_STOP", null);
                 // Confirm before automatically stopping
                 toggleRecording(true);
             }

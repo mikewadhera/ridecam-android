@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.ridecam.AutoStartService;
 import com.ridecam.TripActivity;
 import com.ridecam.TripService;
@@ -15,19 +16,25 @@ import com.ridecam.TripService;
 public class PowerStateChangedReceiver extends BroadcastReceiver {
 
     private static final String TAG = "PowerStateChangedReceiver";
+    private FirebaseAnalytics mAnalytics;
 
     public void onReceive(final Context context , Intent intent) {
         Log.d(TAG, "onReceive");
+        mAnalytics = FirebaseAnalytics.getInstance(context);
         String action = intent.getAction();
 
         if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
 
             Log.d(TAG, "Intent Action: ACTION_POWER_CONNECTED");
+            mAnalytics.logEvent("POWER_CONNECTED", null);
+
             Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
             context.startService(autoStartTripActivityService);
 
         } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
+
             Log.d(TAG, "Intent Action: ACTION_POWER_DISCONNECTED");
+            mAnalytics.logEvent("POWER_DISCONNECTED", null);
 
             Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
             context.stopService(autoStartTripActivityService);

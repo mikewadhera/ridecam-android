@@ -20,6 +20,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class AutoStartService extends Service implements GoogleApiClient.ConnectionCallbacks, ResultCallback<Status>, GoogleApiClient.OnConnectionFailedListener {
 
@@ -29,10 +30,17 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
 
     protected BroadcastReceiver mActivityDetectionReceiver;
     protected GoogleApiClient mGoogleApiClient;
+    protected FirebaseAnalytics mAnalytics;
+
+    public AutoStartService() {
+    }
 
     @Override
     public void onCreate() {
+        mAnalytics = FirebaseAnalytics.getInstance(this);
+        
         Log.d(TAG, "onCreate");
+        mAnalytics.logEvent("AutoStartService#onCreate", null);
 
         // Construct a local broadcast receiver that listens for activity detections
         mActivityDetectionReceiver = new BroadcastReceiver() {
@@ -57,6 +65,8 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
+        mAnalytics.logEvent("AutoStartService#onDestroy", null);
+
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(
                     mGoogleApiClient,
@@ -73,6 +83,8 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
 
     public void onDriveDetection() {
         Log.d(TAG, "onDriveDetection");
+        mAnalytics.logEvent("AutoStartService#onDriveDetect", null);
+
         Intent intent = new Intent(this, TripActivity.class);
         intent.putExtra(TripActivity.IS_FROM_AUTOSTART_EXTRA, true);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

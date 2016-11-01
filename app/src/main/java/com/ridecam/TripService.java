@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.ridecam.auth.AuthUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
@@ -55,12 +56,15 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     private Trip.Coordinate mLastCoordinate;
     private Trip mTrip;
     private PendingIntent mLowStorageAlarmIntent;
+    private FirebaseAnalytics mAnalytics;
 
     public TripService() {
     }
 
     @Override
     public void onCreate() {
+        mAnalytics = FirebaseAnalytics.getInstance(this);
+
         Log.d(TAG, "onCreate");
 
         // Called after we've acquired all permissions required
@@ -78,7 +82,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 // This is VERY bad
                 // We should *never* have the service
                 // shutdown while a trip is in progress
-                // TODO: add logging
+                mAnalytics.logEvent("ERROR_TRIP_SHUTDOWN", null);
             }
 
             releaseCamera();
@@ -126,6 +130,9 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             long freeBytes = FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(this).getAbsolutePath());
             boolean hasLowStorage = freeBytes < Knobs.LOW_STORAGE_FLOOR_BYTES;
             Log.d(TAG, "Free bytes: " + freeBytes);
+            Bundle params = new Bundle();
+            params.putLong("FREE_BYTES", freeBytes);
+            mAnalytics.logEvent("FREE_BYTES_CHECK", params);
             if (hasLowStorage) {
                 Log.d(TAG, "Under LOW_STORAGE_FLOOR_BYTES");
                 onLowStorageError();
@@ -297,7 +304,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     @Override
     public void onCameraError() {
-        // TODO add logging
+        mAnalytics.logEvent("ERROR_CAMERA", null);
         flash(Copy.CAMERA_ERROR);
         if (isTripInProgress()) {
             foregroundTripActivity();
@@ -306,14 +313,14 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     @Override
     public void onRecorderError() {
-        // TODO add logging
+        mAnalytics.logEvent("ERROR_RECORDING", null);
         stopTrip();
         flash(Copy.RIDE_INTERRUPTED);
         foregroundTripActivity();
     }
 
     public void onLowStorageError() {
-        // TODO add logging
+        mAnalytics.logEvent("ERROR_LOW_STORAGE", null);
         stopTrip();
         flash(Copy.RIDE_LOW_STORAGE);
         foregroundTripActivity();

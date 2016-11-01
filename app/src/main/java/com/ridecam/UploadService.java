@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,6 +17,7 @@ import android.util.Log;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageMetadata;
@@ -62,6 +64,7 @@ public class UploadService extends Service {
 
     private StorageReference mStorageRef;
     private SharedPreferences mSharedPrefs;
+    private FirebaseAnalytics mAnalytics;
 
     public UploadService() {
         mStorageRef = FirebaseStorage.getInstance().getReferenceFromUrl(Knobs.VIDEO_UPLOADS_BUCKET).child("videos");
@@ -69,11 +72,15 @@ public class UploadService extends Service {
 
     @Override
     public void onCreate() {
+        mAnalytics = FirebaseAnalytics.getInstance(this);
+
         Log.d(TAG, "onCreate");
+        mAnalytics.logEvent("UploadService#onCreate", null);
         super.onCreate();
 
         if (!Utils.isConnectedToWifi(this)) {
             Log.d(TAG, "Not connected to Wifi... shutting down");
+            mAnalytics.logEvent("BG_UPLOAD_NO_WIFI", null);
             stopSelf();
             return;
         }
@@ -88,6 +95,7 @@ public class UploadService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
+        mAnalytics.logEvent("UploadService#onDestroy", null);
         super.onDestroy();
 
     }
@@ -102,6 +110,7 @@ public class UploadService extends Service {
         }
 
         if (ACTION_PAUSE.equals(intent.getAction())) {
+            mAnalytics.logEvent("BG_UPLOAD_PAUSE", null);
             pauseUploads();
         }
 
@@ -110,6 +119,8 @@ public class UploadService extends Service {
 
     // Calls onDequeueUploadQueue() with the latest completed recording in videos directory not uploaded/uploading
     public void dequeueUploadQueue() {
+
+        mAnalytics.logEvent("BG_UPLOAD_DEQUEUE", null);
 
         final List<String> filePaths = FSUtils.getVideoFileAbsolutePathsAscendingByName(this);
 
@@ -175,10 +186,12 @@ public class UploadService extends Service {
         String resumedSessionId = getStoredUploadSessionId(trip);
         if (resumedSessionId != null) {
             Log.d(TAG, "Previous session detected, resuming upload");
+            mAnalytics.logEvent("BG_UPLOAD_RESUME", null);
             Uri resumedSessionUri = Uri.parse(resumedSessionId);
             uploadTask = remoteFileRef.putFile(localFileRef, new StorageMetadata.Builder().build(), resumedSessionUri);
         } else {
             Log.d(TAG, "No previous session detected");
+            mAnalytics.logEvent("BG_UPLOAD_START", null);
             uploadTask = remoteFileRef.putFile(localFileRef);
         }
 
@@ -201,6 +214,7 @@ public class UploadService extends Service {
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
             Log.d(TAG, "onSuccess");
             Log.d(TAG, "Upload complete for trip: " + trip.getId());
+            mAnalytics.logEvent("BG_UPLOAD_COMPLETE", null);
 
             clearUploadSessionId(trip);
 
@@ -235,6 +249,7 @@ public class UploadService extends Service {
             Log.e(TAG, "onFailure");
             Log.d(TAG, "!!! Upload failed for trip: " + trip.getId());
             e.printStackTrace();
+            mAnalytics.logEvent("BG_UPLOAD_FAIL", null);
 
             // Forget session ID in case this was from resuming a timed out session
             clearUploadSessionId(trip);
@@ -271,8 +286,8 @@ public class UploadService extends Service {
                     if (!isInProgress) {
                         android.os.Process.killProcess(android.os.Process.myPid());
                     } else {
-                        // TODO add logging
                         Log.d(TAG, "Recording in progress. Not pausing uploads");
+                        mAnalytics.logEvent("BG_UPLOAD_PAUSE_FAIL", null);
                     }
                 }
             });
@@ -301,6 +316,7 @@ public class UploadService extends Service {
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(Copy.UPLOAD_RUNNING_NOTIFICATION)
                 .setSmallIcon(R.drawable.cast_ic_notification_small_icon)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.launcher))
                 .setProgress(0, 0, true)
                 .setOngoing(true)
                 .setAutoCancel(false);
