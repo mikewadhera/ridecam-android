@@ -6,6 +6,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -23,6 +25,9 @@ import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.GPSEngine;
 import com.ridecam.model.Trip;
 import com.ridecam.ui.CameraFragment;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
@@ -60,7 +65,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         Log.d(TAG, "onCreate");
 
         // Called after we've acquired all permissions required
-        showForegroundNotification("OFF");
+        showForegroundNotification("Not recording", false);
     }
 
     @Override
@@ -228,8 +233,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
-                showForegroundNotification("ON");
-                flash(Copy.RIDE_START);
+                SimpleDateFormat sdf = new SimpleDateFormat("'Started recording at' h:mm a");
+                showForegroundNotification(sdf.format(new Date()), true);
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());
                 if (mLastCoordinate != null) {
@@ -238,7 +243,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 startLowStorageAlarm();
             } else {
                 flash(Copy.RIDE_START_FAIL);
-                showForegroundNotification("OFF (ERROR)");
+                showForegroundNotification("Internal Error", false);
                 // TODO add logging
             }
         } else {
@@ -252,7 +257,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             if (!mRecorder.isRecording()) {
                 mRecorder = null;
                 stopLowStorageAlarm();
-                showForegroundNotification("OFF");
+                SimpleDateFormat sdf = new SimpleDateFormat("'Stopped recording at' h:mm a");
+                showForegroundNotification(sdf.format(new Date()), false);
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
                     DB.Save saveCommand = new DB.Save(AuthUtils.getUserId(this), mTrip);
@@ -366,7 +372,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         }
     }
 
-    private void showForegroundNotification(String contentText) {
+    private void showForegroundNotification(String contentText, boolean playSound) {
         // Create intent that will bring our app to the front, as if it was tapped in the app
         // launcher
         Intent showTaskIntent = new Intent(getApplicationContext(), TripActivity.class);
@@ -384,8 +390,14 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 .setContentIntent(contentIntent)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(contentText)
-                .setSmallIcon(R.drawable.cast_ic_notification_small_icon)
+                .setSmallIcon(R.drawable.carpool)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.launcher))
                 .setAutoCancel(false);
+
+        if (playSound) {
+            builder.setSound(Uri.parse("android.resource://"
+                    + getPackageName() + "/" + R.raw.chime_495939803));
+        }
 
         startForeground(NOTIFICATION_ID, builder.build());
     }
