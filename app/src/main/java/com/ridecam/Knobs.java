@@ -7,7 +7,7 @@ import com.ridecam.fs.FSUtils;
 
 public class Knobs {
 
-    public static final boolean FORCE_NATIVE_CAMERA = false;
+    public static final boolean FORCE_NATIVE_CAMERA = true;
 
     public static final int PREVIEW_FPS = 24;
 
