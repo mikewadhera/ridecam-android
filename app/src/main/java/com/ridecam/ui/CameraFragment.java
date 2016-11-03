@@ -18,12 +18,13 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.FrameLayout;
 
 import com.github.vignesh_iopex.confirmdialog.Confirm;
 import com.github.vignesh_iopex.confirmdialog.Dialog;
@@ -122,7 +123,7 @@ public class CameraFragment extends Fragment {
                         sCachedSurfaceTexture = surfaceTexture;
                         sTextureViewWidth = surfaceWidth;
                         sTextureViewHeight = surfaceHeight;
-                        manuallyRotatePreviewIfNeeded();
+                        adjustLayoutForCameraEngine();
                         Intent intent = new Intent(getActivity(), TripService.class);
                         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                         getActivity().startService(intent);
@@ -162,7 +163,7 @@ public class CameraFragment extends Fragment {
 
                 }
 
-                manuallyRotatePreviewIfNeeded();
+                adjustLayoutForCameraEngine();
                 Intent intent = new Intent(getActivity(), TripService.class);
                 intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                 getActivity().startService(intent);
@@ -291,8 +292,15 @@ public class CameraFragment extends Fragment {
         }
     }
 
-    private void manuallyRotatePreviewIfNeeded() {
+    private void adjustLayoutForCameraEngine() {
         if (CameraEngine.usingSamsungDualCamera()) {
+            // Move record button right
+            Button recordButton = (Button)mRootView.findViewById(R.id.record_button);
+            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams)recordButton.getLayoutParams();
+            layoutParams.gravity = Gravity.BOTTOM|Gravity.RIGHT;
+            recordButton.setLayoutParams(layoutParams);
+
+            // Manually rotate preview texture
             int width = sTextureViewWidth;
             int height = sTextureViewHeight;
             Matrix matrix = new Matrix();
