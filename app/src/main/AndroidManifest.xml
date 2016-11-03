@@ -68,7 +68,7 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".WeekViewActivity"
-            android:label="Trips"
+            android:label="Past Trips"
             android:parentActivityName=".TripActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
