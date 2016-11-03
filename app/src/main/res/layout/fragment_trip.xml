@@ -13,6 +13,48 @@
         android:visibility="gone"/>
 
 
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/record_message"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/drive_safe"
+            android:text="Drive Safe!"
+            fontPath="fonts/VAG-Rounded-Bold.ttf"
+            android:textColor="#ffffff"
+            android:textSize="42sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:shadowColor="@color/text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2" />
+
+        <TextView
+            android:text="BACKGROUND\nRECORDING"
+            android:textColor="#ffffff"
+            android:textSize="20sp"
+            android:layout_margin="12dp"
+            android:letterSpacing="0.25"
+            android:gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:shadowColor="@color/text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"/>
+
+    </LinearLayout>
+
+
     <View
         android:id="@+id/record_frame"
         android:layout_width="match_parent"
@@ -39,7 +81,11 @@
         android:gravity="center"
         android:textColor="#ffffff"
         android:textSize="30sp"
-        android:layout_marginTop="40dp" />
+        android:layout_marginTop="40dp"
+        android:shadowColor="@color/text_shadow"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2"/>
 
     <Button
         android:id="@+id/list_button"
