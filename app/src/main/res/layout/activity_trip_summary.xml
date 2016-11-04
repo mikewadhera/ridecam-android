@@ -48,45 +48,47 @@
             android:layout_below="@id/actionbar"/>
 
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
             android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true">
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:background="@drawable/miles_circle_large">
 
             <TextView
                 android:id="@+id/miles_circle"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
-                android:layout_margin="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:textSize="45dp"
                 android:textColor="#FFF"
                 android:gravity="center"
-                android:background="@drawable/miles_circle_large"
+                android:layout_marginBottom="10dp"
                 android:layout_centerHorizontal="true" />
 
             <TextView
                 android:id="@+id/miles_footnote"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="MILES"
-                android:textSize="20dp"
+                android:textColor="#FFF"
+                android:textSize="18dp"
                 android:gravity="center"
                 android:letterSpacing="0.33"
                 android:layout_below="@id/miles_circle"
-                android:layout_marginBottom="70sp"/>
+                android:layout_centerHorizontal="true"/>
 
         </RelativeLayout>
 
         <Button android:id="@+id/done_button"
-            android:layout_width="120dp"
-            android:layout_height="60dp"
+            android:layout_width="fill_parent"
+            android:layout_height="70dp"
             android:text="FINISH"
             android:textColor="#FFF"
             android:background="#000"
             android:textSize="20dp"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            android:layout_margin="45dp">
+            android:layout_margin="20dp">
         </Button>
 
     </RelativeLayout>
