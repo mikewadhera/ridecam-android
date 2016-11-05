@@ -37,9 +37,10 @@
             android:shadowRadius="2" />
 
         <TextView
+            android:id="@+id/background_recording_subhead"
             android:text="BACKGROUND\nRECORDING"
             android:textColor="#ffffff"
-            android:textSize="20sp"
+            android:textSize="24sp"
             android:layout_margin="12dp"
             android:letterSpacing="0.25"
             android:gravity="center"
@@ -50,7 +51,7 @@
             android:shadowColor="@color/text_shadow"
             android:shadowDx="0"
             android:shadowDy="1"
-            android:shadowRadius="2"/>
+            android:shadowRadius="10" />
 
     </LinearLayout>
 
