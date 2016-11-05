@@ -264,12 +264,12 @@ public class CameraFragment extends Fragment {
                 if (isTripInProgress) {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
-                    buttonView.setText("■");
+                    buttonView.setText(Copy.RIDE_END);
                     recordMessageView.setVisibility(View.VISIBLE);
                 } else {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
-                    buttonView.setText("");
+                    buttonView.setText(Copy.RIDE_START);
                     recordMessageView.setVisibility(View.GONE);
                 }
             }
@@ -297,12 +297,6 @@ public class CameraFragment extends Fragment {
 
     private void adjustLayoutForCameraEngine() {
         if (CameraEngine.usingSamsungDualCamera()) {
-            // Move record button right
-            Button recordButton = (Button)mRootView.findViewById(R.id.record_button);
-            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams)recordButton.getLayoutParams();
-            layoutParams.gravity = Gravity.BOTTOM|Gravity.RIGHT;
-            recordButton.setLayoutParams(layoutParams);
-
             // Manually rotate preview texture
             int width = sTextureViewWidth;
             int height = sTextureViewHeight;
