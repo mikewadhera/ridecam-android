@@ -6,14 +6,21 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.NotificationCompat;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Display;
 import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -50,6 +57,12 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     public static final String RESULT_RECEIVER = "resultReceiver";
 
+    private static final int LayoutParamFlags = WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+            | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+
     private CameraEngine mCameraEngine;
     private RecorderEngine mRecorder;
     private GPSEngine mGPSEngine;
@@ -57,6 +70,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     private Trip mTrip;
     private PendingIntent mLowStorageAlarmIntent;
     private FirebaseAnalytics mAnalytics;
+    private WindowManager mWindowManager;
+    private View mLayoutView;
 
     public TripService() {
     }
@@ -67,6 +82,21 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
         Log.d(TAG, "onCreate");
 
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                toPixels(2, displayMetrics),
+                WindowManager.LayoutParams.TYPE_TOAST,
+                LayoutParamFlags,
+                PixelFormat.TRANSPARENT);
+        params.gravity = Gravity.LEFT | Gravity.TOP;
+        mWindowManager = (WindowManager) this.getSystemService(WINDOW_SERVICE);
+        Display display = mWindowManager.getDefaultDisplay();
+        LayoutInflater inflater = LayoutInflater.from(this);
+        mLayoutView = inflater.inflate(R.layout.service_window, null);
+        mWindowManager.addView(mLayoutView, params);
+
         // Called after we've acquired all permissions required
         showForegroundNotification("Not recording", false);
     }
@@ -76,6 +106,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         Log.d(TAG, "TripService onDestroy");
 
         // By design this should not be called much / only when app is killed
+
+        mWindowManager.removeView(mLayoutView);
 
         try {
             if (isTripInProgress()) {
@@ -108,6 +140,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     // Activity state transitions
 
     public void handleOnResume() {
+        mLayoutView.setVisibility(View.GONE);
         if (!isTripInProgress()) {
             acquireCamera();
             startLocationUpdates();
@@ -119,6 +152,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         if (!isTripInProgress()) {
             releaseCamera();
             stopLocationUpdates();
+        } else {
+            mLayoutView.setVisibility(View.VISIBLE);
         }
     }
 
@@ -265,6 +300,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 stopLowStorageAlarm();
                 SimpleDateFormat sdf = new SimpleDateFormat("'Stopped recording at' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), false);
+                mLayoutView.setVisibility(View.GONE);
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
                     DB.Save saveCommand = new DB.Save(AuthUtils.getUserId(this), mTrip);
@@ -418,6 +454,10 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     private AlarmManager getAlarmManager() {
         return (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+    }
+
+    public static int toPixels(int dp, DisplayMetrics metrics) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, metrics);
     }
 
 }
