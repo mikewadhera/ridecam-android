@@ -98,7 +98,7 @@
             android:layout_height="70dp"
             android:text="FINISH"
             android:textColor="#FFF"
-            android:background="#000"
+            android:background="@drawable/summary_finish_button"
             android:textSize="20dp"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
