@@ -69,7 +69,7 @@
         android:layout_height="70dp"
         android:gravity="center"
         android:layout_gravity="bottom|center"
-        android:layout_margin="30dp"
+        android:layout_margin="40dp"
         android:textSize="20sp"
         android:textColor="#FFF"
         />
