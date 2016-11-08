@@ -432,17 +432,14 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
         android.support.v4.app.NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setContentIntent(contentIntent)
+                .setSmallIcon(R.drawable.ic_stat_r)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(contentText)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.launcher))
                 .setAutoCancel(false);
 
         if (recordStart) {
             builder.setSound(Uri.parse("android.resource://"
                     + getPackageName() + "/" + R.raw.pad_glow_chime));
-            builder.setSmallIcon(R.drawable.ic_stat_av_videocam);
-        } else {
-            builder.setSmallIcon(R.drawable.ic_stat_av_videocam_off);
         }
 
         startForeground(NOTIFICATION_ID, builder.build());
