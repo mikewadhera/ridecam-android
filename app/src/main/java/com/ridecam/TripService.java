@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,7 +14,6 @@ import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.NotificationCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -38,7 +36,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
-import static com.ridecam.ui.Utils.toPixels;
 
 public class TripService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
 
@@ -99,7 +96,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         mLayoutView = inflater.inflate(R.layout.service_window, null);
         mWindowManager.addView(mLayoutView, params);
 
-        // Called after we've acquired all permissions required
+        hideStatusBarRecordingIndicator();
+
         showForegroundNotification("Not recording", false);
     }
 
@@ -142,7 +140,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     // Activity state transitions
 
     public void handleOnResume() {
-        mLayoutView.setVisibility(View.GONE);
+        hideStatusBarRecordingIndicator();
         if (!isTripInProgress()) {
             acquireCamera();
             startLocationUpdates();
@@ -155,8 +153,16 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             releaseCamera();
             stopLocationUpdates();
         } else {
-            mLayoutView.setVisibility(View.VISIBLE);
+            showStatusBarRecordingIndicator();
         }
+    }
+
+    private void showStatusBarRecordingIndicator() {
+        mLayoutView.setVisibility(View.VISIBLE);
+    }
+
+    private void hideStatusBarRecordingIndicator() {
+        mLayoutView.setVisibility(View.GONE);
     }
 
     // Alarm callbacks
@@ -302,7 +308,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 stopLowStorageAlarm();
                 SimpleDateFormat sdf = new SimpleDateFormat("'Stopped recording at' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), false);
-                mLayoutView.setVisibility(View.GONE);
+                hideStatusBarRecordingIndicator();
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
                     DB.Save saveCommand = new DB.Save(AuthUtils.getUserId(this), mTrip);
