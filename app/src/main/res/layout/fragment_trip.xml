@@ -23,7 +23,7 @@
 
         <TextView
             android:id="@+id/drive_safe"
-            android:text="Drive Safe!"
+            android:text="Drive Safely"
             fontPath="fonts/VAG-Rounded-Bold.ttf"
             android:textColor="#ffffff"
             android:textSize="48sp"
@@ -83,7 +83,7 @@
         android:gravity="center"
         android:textColor="#ffffff"
         android:textSize="30sp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="30dp"
         android:shadowColor="@color/text_shadow"
         android:shadowDx="0"
         android:shadowDy="1"
@@ -99,7 +99,7 @@
         android:gravity="right"
         android:layout_gravity="top|right"
         android:textSize="30sp"
-        android:layout_marginTop="43dp"
+        android:layout_marginTop="33dp"
         android:layout_marginRight="45dp"/>
 
 </FrameLayout>
