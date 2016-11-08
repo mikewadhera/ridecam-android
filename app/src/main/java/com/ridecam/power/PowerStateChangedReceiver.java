@@ -28,8 +28,22 @@ public class PowerStateChangedReceiver extends BroadcastReceiver {
             Log.d(TAG, "Intent Action: ACTION_POWER_CONNECTED");
             mAnalytics.logEvent("POWER_CONNECTED", null);
 
-            Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
-            context.startService(autoStartTripActivityService);
+            // Are we already recording? If so don't bring up autostart service
+            final Intent checkInProgressIntent = new Intent(context, TripService.class);
+            checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
+            checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+                @Override
+                protected void onReceiveResult(int code, Bundle data) {
+                    boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
+                    if (isInProgress) {
+                        Log.d(TAG, "Recording in progress - not starting autostart service");
+                    } else {
+                        Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
+                        context.startService(autoStartTripActivityService);
+                    }
+                }
+            });
+            context.startService(checkInProgressIntent);
 
         } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
 
