@@ -1,5 +1,6 @@
 package com.ridecam;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
@@ -14,6 +15,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -73,7 +75,8 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
                 editView.setSelection(trip.getName().length());
 
                 TextView milesView = (TextView)findViewById(R.id.miles_circle);
-                milesView.setText(String.valueOf(trip.getMiles()));
+                animateTextView(0, (int)trip.getMiles(), milesView);
+                showSubMessage();
             }
         });
     }
@@ -111,6 +114,28 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
         intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(intent);
         finish();
+    }
+
+    public void animateTextView(int initialValue, int finalValue, final TextView  textview) {
+        ValueAnimator valueAnimator = ValueAnimator.ofInt(initialValue, finalValue);
+        valueAnimator.setDuration(1000);
+
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                textview.setText(valueAnimator.getAnimatedValue().toString());
+            }
+        });
+        valueAnimator.start();
+    }
+
+    public void showSubMessage() {
+        AlphaAnimation fadeIn = new AlphaAnimation(0.0f, 1.0f);
+        fadeIn.setStartOffset(1000);
+        fadeIn.setDuration(300);
+        View textView = findViewById(R.id.submessage);
+        textView.setVisibility(View.VISIBLE);
+        textView.startAnimation(fadeIn);
     }
 
     @Override

@@ -48,6 +48,7 @@
             android:layout_below="@id/actionbar"/>
 
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/miles_container"
             android:layout_width="180dp"
             android:layout_height="180dp"
             android:layout_centerHorizontal="true"
@@ -78,6 +79,19 @@
                 android:layout_centerHorizontal="true"/>
 
         </RelativeLayout>
+
+        <TextView
+            android:id="@+id/submessage"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_below="@id/miles_container"
+            android:text="Good Job!"
+            fontPath="fonts/VAG-Rounded-Bold.ttf"
+            android:textSize="24sp"
+            android:textColor="#121212"
+            android:visibility="invisible"
+            android:gravity="center"
+            />
 
         <Button android:id="@+id/done_button"
             android:layout_width="fill_parent"
