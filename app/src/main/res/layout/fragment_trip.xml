@@ -23,10 +23,10 @@
 
         <TextView
             android:id="@+id/drive_safe"
-            android:text="Drive Safely"
+            android:text="Safe Driving!"
             fontPath="fonts/VAG-Rounded-Bold.ttf"
             android:textColor="#ffffff"
-            android:textSize="48sp"
+            android:textSize="46sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
@@ -100,6 +100,6 @@
         android:layout_gravity="top|right"
         android:textSize="30sp"
         android:layout_marginTop="33dp"
-        android:layout_marginRight="45dp"/>
+        android:layout_marginRight="35dp"/>
 
 </FrameLayout>
