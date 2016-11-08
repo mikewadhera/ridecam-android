@@ -8,9 +8,11 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
@@ -84,10 +86,13 @@ public class WeekViewFragment extends Fragment {
     }
 
     public void render() {
+        final ProgressBar progressBar = (ProgressBar)mRootView.findViewById(R.id.progressbar);
+        progressBar.setVisibility(View.VISIBLE);
         DB.LoadWeeklyTrips command = new DB.LoadWeeklyTrips(AuthUtils.getUserId(getActivity()));
         command.runAsync(new DB.LoadWeeklyTrips.WeeklyTripsListener() {
             @Override
             public void onResult(List<DB.LoadWeeklyTrips.WeeklyTripSummary> result) {
+                progressBar.setVisibility(View.GONE);
                 mListAdapter.setWeeklySummaries(result);
                 mListAdapter.notifyDataSetChanged();
             }
@@ -104,7 +109,11 @@ public class WeekViewFragment extends Fragment {
         }
 
         public int getCount() {
-            return mWeeklyTripSummaries.size()+1;
+            if (mWeeklyTripSummaries.size() == 0) {
+                return 0;
+            } else {
+                return mWeeklyTripSummaries.size()+1;
+            }
         }
 
         public DB.LoadWeeklyTrips.WeeklyTripSummary getItem(int position) {

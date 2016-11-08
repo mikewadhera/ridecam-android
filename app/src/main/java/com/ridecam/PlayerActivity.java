@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.MediaController;
+import android.widget.ProgressBar;
 import android.widget.VideoView;
 
 import com.github.vignesh_iopex.confirmdialog.Confirm;
@@ -34,6 +35,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     String mTripId;
     VideoView mVideoView;
+    ProgressBar mProgressBar;
     Button mBackButton;
     Button mDeleteButton;
 
@@ -53,6 +55,7 @@ public class PlayerActivity extends AppCompatActivity {
         String videoUrl = intent.getStringExtra(TRIP_VIDEO_URL_EXTRA);
 
         mVideoView = (VideoView) findViewById(R.id.video_view);
+        mProgressBar = (ProgressBar) findViewById(R.id.progressbar);
 
         try {
             MediaController mediacontroller = new MediaController(this);
@@ -67,9 +70,11 @@ public class PlayerActivity extends AppCompatActivity {
         }
 
         mVideoView.requestFocus();
+
         mVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             public void onPrepared(MediaPlayer mp) {
                 mBackButton.setVisibility(View.VISIBLE);
+                mProgressBar.setVisibility(View.GONE);
                 mVideoView.start();
             }
         });
@@ -89,6 +94,13 @@ public class PlayerActivity extends AppCompatActivity {
                 delete();
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        mProgressBar.setVisibility(View.VISIBLE);
     }
 
     private void delete() {
