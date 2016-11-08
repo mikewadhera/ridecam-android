@@ -66,11 +66,11 @@
         android:id="@+id/record_button"
         android:visibility="gone"
         android:layout_width="fill_parent"
-        android:layout_height="70dp"
+        android:layout_height="60dp"
         android:gravity="center"
         android:layout_gravity="bottom|center"
-        android:layout_margin="40dp"
-        android:textSize="20sp"
+        android:layout_margin="30dp"
+        android:textSize="18sp"
         android:textColor="#FFF"
         />
 

@@ -54,8 +54,8 @@ public class RecordButton extends Button {
     }
 
     private void init(Context context, AttributeSet attrs) {
-        mIconPadding = Utils.toPixels(4, context.getResources().getDisplayMetrics());
-        mIconSize = Utils.toPixels(24, context.getResources().getDisplayMetrics());
+        mIconPadding = Utils.toPixels(8, context.getResources().getDisplayMetrics());
+        mIconSize = Utils.toPixels(32, context.getResources().getDisplayMetrics());
     }
 
     public void setIcon(Drawable drawable) {
