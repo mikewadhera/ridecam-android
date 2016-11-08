@@ -92,7 +92,7 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void delete() {
-        Confirm.using(this).ask("Delete Trip?").onPositive("YES", new Dialog.OnClickListener() {
+        Confirm.using(this).ask("Delete Shift?").onPositive("YES", new Dialog.OnClickListener() {
             @Override public void onClick(final Dialog dialog, int which) {
                 DB.DeleteTrip deleteTrip = new DB.DeleteTrip(AuthUtils.getUserId(PlayerActivity.this), mTripId);
                 deleteTrip.runAsync(new DB.DeleteTrip.ResultListener() {
