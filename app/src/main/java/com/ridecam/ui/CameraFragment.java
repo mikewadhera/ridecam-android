@@ -7,9 +7,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
@@ -29,6 +31,8 @@ import android.widget.Button;
 import com.github.vignesh_iopex.confirmdialog.Confirm;
 import com.github.vignesh_iopex.confirmdialog.Dialog;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.mikepenz.google_material_typeface_library.GoogleMaterial;
+import com.mikepenz.iconics.IconicsDrawable;
 import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
@@ -251,7 +255,7 @@ public class CameraFragment extends Fragment {
     }
 
     public void render() {
-        final Button buttonView = (Button)mRootView.findViewById(R.id.record_button);
+        final RecordButton buttonView = (RecordButton)mRootView.findViewById(R.id.record_button);
         final View previewView = mRootView.findViewById(R.id.record_frame);
         final View recordMessageView = mRootView.findViewById(R.id.record_message);
         final View recordMessageSubView = recordMessageView.findViewById(R.id.background_recording_subhead);
@@ -261,11 +265,14 @@ public class CameraFragment extends Fragment {
         intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
             @Override
             protected void onReceiveResult(int code, Bundle data) {
+                buttonView.setVisibility(View.VISIBLE);
                 boolean isTripInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
                 if (isTripInProgress) {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
                     buttonView.setText(Copy.RIDE_END);
+                    Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam_off).color(Color.WHITE).sizeDp(24);
+                    buttonView.setIcon(icon);
                     Animation fadeInOutAnimation = AnimationUtils.loadAnimation(getActivity(), R.anim.fadeinoutinfinite);
                     recordMessageSubView.startAnimation(fadeInOutAnimation);
                     recordMessageView.setVisibility(View.VISIBLE);
@@ -273,6 +280,8 @@ public class CameraFragment extends Fragment {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
                     buttonView.setText(Copy.RIDE_START);
+                    Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam).color(Color.WHITE).sizeDp(24);
+                    buttonView.setIcon(icon);
                     recordMessageView.setVisibility(View.GONE);
                 }
             }

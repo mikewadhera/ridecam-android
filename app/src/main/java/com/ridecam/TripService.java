@@ -32,11 +32,13 @@ import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.GPSEngine;
 import com.ridecam.model.Trip;
 import com.ridecam.ui.CameraFragment;
+import com.ridecam.ui.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+import static com.ridecam.ui.Utils.toPixels;
 
 public class TripService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
 
@@ -86,7 +88,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
-                toPixels(2, displayMetrics),
+                Utils.toPixels(2, displayMetrics),
                 WindowManager.LayoutParams.TYPE_TOAST,
                 LayoutParamFlags,
                 PixelFormat.TRANSPARENT);
@@ -454,10 +456,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     private AlarmManager getAlarmManager() {
         return (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-    }
-
-    public static int toPixels(int dp, DisplayMetrics metrics) {
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, metrics);
     }
 
 }

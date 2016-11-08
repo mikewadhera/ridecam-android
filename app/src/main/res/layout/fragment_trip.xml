@@ -62,11 +62,11 @@
         android:layout_height="match_parent"
         android:background="@drawable/record_frame"/>
 
-    <Button
+    <com.ridecam.ui.RecordButton
         android:id="@+id/record_button"
+        android:visibility="gone"
         android:layout_width="fill_parent"
         android:layout_height="70dp"
-        android:background="@drawable/start_button"
         android:gravity="center"
         android:layout_gravity="bottom|center"
         android:layout_margin="30dp"
