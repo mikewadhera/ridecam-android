@@ -30,6 +30,7 @@ public class TripListActivity extends AppCompatActivity {
 
     public Trip[] mTrips;
     private ListView mListView;
+    private boolean mStarred;
     private String mStartId;
     private String mEndId;
 
@@ -59,10 +60,11 @@ public class TripListActivity extends AppCompatActivity {
         });
 
         Intent intent = getIntent();
+        mStarred = intent.getBooleanExtra(TRIPS_IS_STARRED_EXTRA, false);
         mStartId = intent.getStringExtra(TRIP_START_ID_EXTRA);
         mEndId = intent.getStringExtra(TRIP_END_ID_EXTRA);
 
-        if (intent.getBooleanExtra(TRIPS_IS_STARRED_EXTRA, false)) {
+        if (mStarred) {
             setTitle("Starred");
         } else {
             setTitle(intent.getStringExtra(TRIPS_TITLE_EXTRA));
@@ -73,18 +75,20 @@ public class TripListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(
-                AuthUtils.getUserId(this),
-                mStartId,
-                mEndId);
-        command.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
-            @Override
-            public void onResult(List<Trip> trips) {
-                mTrips = trips.toArray(new Trip[trips.size()]);
-                SimpleArrayAdapter adapter = new SimpleArrayAdapter(TripListActivity.this, mTrips);
-                mListView.setAdapter(adapter);
-            }
-        });
+        if (!mStarred) {
+            DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(
+                    AuthUtils.getUserId(this),
+                    mStartId,
+                    mEndId);
+            command.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
+                @Override
+                public void onResult(List<Trip> trips) {
+                    mTrips = trips.toArray(new Trip[trips.size()]);
+                    SimpleArrayAdapter adapter = new SimpleArrayAdapter(TripListActivity.this, mTrips);
+                    mListView.setAdapter(adapter);
+                    }
+            });
+        }
     }
 
     public class SimpleArrayAdapter extends ArrayAdapter<Trip> {
