@@ -20,7 +20,7 @@
         <TextView
             android:id="@+id/actionbar"
             android:layout_width="match_parent"
-            android:text="Shift Complete"
+            android:text="Drive Complete"
             android:gravity="center_vertical"
             android:paddingLeft="20sp"
             fontPath="fonts/VAG-Rounded-Bold.ttf"

@@ -2,9 +2,9 @@ package com.ridecam;
 
 public class Copy {
 
-    public static final String RIDE_START = "BEGIN SHIFT";
+    public static final String RIDE_START = "START DRIVE";
 
-    public static final String RIDE_END = "END SHIFT";
+    public static final String RIDE_END = "END DRIVE";
 
     public static final String RIDE_START_FAIL = "Ridecam ERROR";
 

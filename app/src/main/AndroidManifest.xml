@@ -69,7 +69,7 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".WeekViewActivity"
-            android:label="Past Shifts"
+            android:label="My Drives"
             android:parentActivityName=".TripActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
