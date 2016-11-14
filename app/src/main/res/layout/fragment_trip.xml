@@ -12,49 +12,22 @@
         android:keepScreenOn="true"
         android:visibility="gone"/>
 
-
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <TextView
         android:id="@+id/record_message"
-        android:visibility="gone"
+        android:text="YOU MAY USE\nOTHER APPS"
+        android:textColor="#ffffff"
+        android:textSize="25sp"
+        android:layout_margin="12dp"
+        android:letterSpacing="0.25"
+        android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center">
-
-        <TextView
-            android:id="@+id/drive_safe"
-            android:text="Safe Driving!"
-            fontPath="fonts/VAG-Rounded-Bold.ttf"
-            android:textColor="#ffffff"
-            android:textSize="46sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:shadowColor="@color/text_shadow"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="2" />
-
-        <TextView
-            android:id="@+id/background_recording_subhead"
-            android:text="BACKGROUND\nRECORDING"
-            android:textColor="#ffffff"
-            android:textSize="24sp"
-            android:layout_margin="12dp"
-            android:letterSpacing="0.25"
-            android:gravity="center"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:shadowColor="@color/text_shadow"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="10" />
-
-    </LinearLayout>
-
+        android:layout_gravity="center"
+        android:shadowColor="@color/text_shadow"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:visibility="gone"
+        android:shadowRadius="10" />
 
     <View
         android:id="@+id/record_frame"

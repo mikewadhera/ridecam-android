@@ -258,7 +258,6 @@ public class CameraFragment extends Fragment {
         final RecordButton buttonView = (RecordButton)mRootView.findViewById(R.id.record_button);
         final View previewView = mRootView.findViewById(R.id.record_frame);
         final View recordMessageView = mRootView.findViewById(R.id.record_message);
-        final View recordMessageSubView = recordMessageView.findViewById(R.id.background_recording_subhead);
 
         Intent intent = new Intent(getActivity(), TripService.class);
         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
@@ -273,8 +272,6 @@ public class CameraFragment extends Fragment {
                     buttonView.setText(Copy.RIDE_END);
                     Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam_off).color(Color.WHITE).sizeDp(24);
                     buttonView.setIcon(icon);
-                    Animation fadeInOutAnimation = AnimationUtils.loadAnimation(getActivity(), R.anim.fadeinoutinfinite);
-                    recordMessageSubView.startAnimation(fadeInOutAnimation);
                     recordMessageView.setVisibility(View.VISIBLE);
                 } else {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
