@@ -206,7 +206,7 @@ public class CameraFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 mAnalytics.logEvent("MANUAL_RECORD_TOGGLE", null);
-                toggleRecording(true);
+                toggleRecording(false);
             }
         });
 
@@ -301,7 +301,7 @@ public class CameraFragment extends Fragment {
             } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
                 mAnalytics.logEvent("AUTO_RECORD_STOP", null);
                 // Confirm before automatically stopping
-                toggleRecording(true);
+                toggleRecording(false);
             }
             getActivity().setIntent(null);
         }
