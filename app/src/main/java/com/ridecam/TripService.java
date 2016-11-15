@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
@@ -282,6 +283,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
+                flash(Copy.RIDE_START_CONFIRM);
                 SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT ' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), true);
                 mTrip = new Trip(tripId);
@@ -452,7 +454,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     }
 
     private void flash(String text) {
-        Toast toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
+        Toast toast = Toast.makeText(this, text, Toast.LENGTH_LONG);
         toast.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER, 0, 0);
         toast.show();
     }

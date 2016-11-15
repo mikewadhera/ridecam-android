@@ -272,7 +272,13 @@ public class CameraFragment extends Fragment {
                     buttonView.setText(Copy.RIDE_END);
                     Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam_off).color(Color.WHITE).sizeDp(24);
                     buttonView.setIcon(icon);
-                    recordMessageView.setVisibility(View.VISIBLE);
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            recordMessageView.setVisibility(View.VISIBLE);
+                        }
+                    }, 3700);
                 } else {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
