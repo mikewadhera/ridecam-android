@@ -38,7 +38,13 @@ public class TripActivity extends AppCompatActivity {
                 + WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED|
                 + WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
 
-        setContentView(R.layout.activity_trip);
+        Intent intent = getIntent();
+
+        if (intent != null && intent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTART_EXTRA, false)) {
+            setContentView(R.layout.activity_trip_1x1);
+        } else {
+            setContentView(R.layout.activity_trip);
+        }
     }
 
     @Override
