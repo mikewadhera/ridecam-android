@@ -282,7 +282,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
-                SimpleDateFormat sdf = new SimpleDateFormat("'Started recording at' h:mm a");
+                SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT ' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), true);
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());
@@ -306,7 +306,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             if (!mRecorder.isRecording()) {
                 mRecorder = null;
                 stopLowStorageAlarm();
-                SimpleDateFormat sdf = new SimpleDateFormat("'Stopped recording at' h:mm a");
+                SimpleDateFormat sdf = new SimpleDateFormat("'TURNED OFF AT ' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), false);
                 hideStatusBarRecordingIndicator();
                 if (mTrip != null) {
