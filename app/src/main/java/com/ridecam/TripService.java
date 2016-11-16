@@ -260,7 +260,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
             case COMMAND_ON_AUTOSTART:
                 handleAutoStart();
-                reRenderActivity();
                 break;
 
             default:
