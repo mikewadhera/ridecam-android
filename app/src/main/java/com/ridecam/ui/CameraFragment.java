@@ -272,13 +272,7 @@ public class CameraFragment extends Fragment {
                     buttonView.setText(Copy.RIDE_END);
                     Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam_off).color(Color.WHITE).sizeDp(24);
                     buttonView.setIcon(icon);
-                    Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            recordMessageView.setVisibility(View.VISIBLE);
-                        }
-                    }, 3700);
+                    recordMessageView.setVisibility(View.VISIBLE);
                 } else {
                     previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
                     buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
@@ -300,15 +294,15 @@ public class CameraFragment extends Fragment {
                 mAnalytics.logEvent("AUTO_RECORD_START", null);
                 Intent intent = new Intent(getActivity(), TripService.class);
                 intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ON_AUTOSTART);
+                getActivity().setIntent(null);
                 getActivity().startService(intent);
                 getActivity().finish();
-                return;
             } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
                 mAnalytics.logEvent("AUTO_RECORD_STOP", null);
                 // Confirm before automatically stopping
                 toggleRecording(false);
+                getActivity().setIntent(null);
             }
-            getActivity().setIntent(null);
         }
     }
 
