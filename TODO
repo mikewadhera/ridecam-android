@@ -3,7 +3,7 @@
 
 x Fix event name warnings
 x Add confirm dialog on autostop
-* Remove border/chrome
+x Remove border/chrome
 * Remove summary and weekly folders screens
 * More visible RIDECAM ON
 * Show date/time in player

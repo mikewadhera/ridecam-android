@@ -276,7 +276,7 @@ public class CameraFragment extends Fragment {
                             buttonView.setIcon(icon);
                             recordMessageView.setVisibility(View.VISIBLE);
                         } else {
-                            previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
+                            previewView.setBackgroundDrawable(null);
                             buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
                             buttonView.setText(Copy.RIDE_START);
                             Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam).color(Color.WHITE).sizeDp(24);
