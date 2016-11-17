@@ -1,7 +1,7 @@
 0.4
 ===
 
-* Fix event name warnings
+x Fix event name warnings
 x Add confirm dialog on autostop
 * Remove border/chrome
 * Remove summary and weekly folders screens

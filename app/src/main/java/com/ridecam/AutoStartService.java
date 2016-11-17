@@ -40,7 +40,6 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
         mAnalytics = FirebaseAnalytics.getInstance(this);
         
         Log.d(TAG, "onCreate");
-        mAnalytics.logEvent("AutoStartService#onCreate", null);
 
         // Construct a local broadcast receiver that listens for activity detections
         mActivityDetectionReceiver = new BroadcastReceiver() {
@@ -65,7 +64,6 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
-        mAnalytics.logEvent("AutoStartService#onDestroy", null);
 
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(
@@ -83,7 +81,6 @@ public class AutoStartService extends Service implements GoogleApiClient.Connect
 
     public void onDriveDetection() {
         Log.d(TAG, "onDriveDetection");
-        mAnalytics.logEvent("AutoStartService#onDriveDetect", null);
 
         Intent intent = new Intent(this, TripActivity.class);
         intent.putExtra(TripActivity.IS_FROM_AUTOSTART_EXTRA, true);

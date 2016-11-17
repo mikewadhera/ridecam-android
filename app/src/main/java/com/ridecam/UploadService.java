@@ -75,7 +75,6 @@ public class UploadService extends Service {
         mAnalytics = FirebaseAnalytics.getInstance(this);
 
         Log.d(TAG, "onCreate");
-        mAnalytics.logEvent("UploadService#onCreate", null);
         super.onCreate();
 
         if (!Utils.isConnectedToWifi(this)) {
@@ -95,7 +94,6 @@ public class UploadService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
-        mAnalytics.logEvent("UploadService#onDestroy", null);
         super.onDestroy();
 
     }
