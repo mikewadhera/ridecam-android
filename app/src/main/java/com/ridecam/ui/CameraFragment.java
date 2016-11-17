@@ -255,35 +255,39 @@ public class CameraFragment extends Fragment {
     }
 
     public void render() {
-        final RecordButton buttonView = (RecordButton)mRootView.findViewById(R.id.record_button);
-        final View previewView = mRootView.findViewById(R.id.record_frame);
-        final View recordMessageView = mRootView.findViewById(R.id.record_message);
+        if (isAdded() && getActivity() != null) {
+            final RecordButton buttonView = (RecordButton)mRootView.findViewById(R.id.record_button);
+            final View previewView = mRootView.findViewById(R.id.record_frame);
+            final View recordMessageView = mRootView.findViewById(R.id.record_message);
 
-        Intent intent = new Intent(getActivity(), TripService.class);
-        intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
-        intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
-            @Override
-            protected void onReceiveResult(int code, Bundle data) {
-                buttonView.setVisibility(View.VISIBLE);
-                boolean isTripInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
-                if (isTripInProgress) {
-                    previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
-                    buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
-                    buttonView.setText(Copy.RIDE_END);
-                    Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam_off).color(Color.WHITE).sizeDp(24);
-                    buttonView.setIcon(icon);
-                    recordMessageView.setVisibility(View.VISIBLE);
-                } else {
-                    previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
-                    buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
-                    buttonView.setText(Copy.RIDE_START);
-                    Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam).color(Color.WHITE).sizeDp(24);
-                    buttonView.setIcon(icon);
-                    recordMessageView.setVisibility(View.GONE);
+            Intent intent = new Intent(getActivity(), TripService.class);
+            intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
+            intent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
+                @Override
+                protected void onReceiveResult(int code, Bundle data) {
+                    if (isAdded() && getActivity() != null) {
+                        buttonView.setVisibility(View.VISIBLE);
+                        boolean isTripInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
+                        if (isTripInProgress) {
+                            previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
+                            buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
+                            buttonView.setText(Copy.RIDE_END);
+                            Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam_off).color(Color.WHITE).sizeDp(24);
+                            buttonView.setIcon(icon);
+                            recordMessageView.setVisibility(View.VISIBLE);
+                        } else {
+                            previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame));
+                            buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
+                            buttonView.setText(Copy.RIDE_START);
+                            Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam).color(Color.WHITE).sizeDp(24);
+                            buttonView.setIcon(icon);
+                            recordMessageView.setVisibility(View.GONE);
+                        }
+                    }
                 }
-            }
-        });
-        getActivity().startService(intent);
+            });
+            getActivity().startService(intent);
+        }
     }
 
     public void resumeAutoStartStop() {
