@@ -16,7 +16,7 @@ public class Copy {
 
     public static final String CAMERA_ERROR = "Internal Camera Error";
 
-    public static final String RIDE_STOP_CONFIRM = "Stop Recording?";
+    public static final String RIDE_STOP_CONFIRM = "End Drive?";
 
     public static final String UPLOAD_RUNNING_NOTIFICATION = "Syncing";
 

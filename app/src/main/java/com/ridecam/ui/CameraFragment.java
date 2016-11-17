@@ -300,7 +300,7 @@ public class CameraFragment extends Fragment {
             } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
                 mAnalytics.logEvent("AUTO_RECORD_STOP", null);
                 // Confirm before automatically stopping
-                toggleRecording(false);
+                toggleRecording(true);
                 getActivity().setIntent(null);
             }
         }
