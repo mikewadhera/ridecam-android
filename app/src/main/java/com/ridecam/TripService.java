@@ -99,7 +99,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
         hideStatusBarRecordingIndicator();
 
-        showForegroundNotification("Not recording", false);
+        hideForegroundNotification();
     }
 
     @Override
@@ -189,6 +189,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mCameraEngine = new CameraEngine(this, CameraFragment.sCachedSurfaceTexture);
             mCameraEngine.setErrorListener(this);
             mCameraEngine.acquireCamera();
+            showForegroundNotification("Not recording", false);
         } else {
             // TODO add logging
         }
@@ -198,6 +199,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         if (mCameraEngine != null) {
             try {
                 mCameraEngine.releaseCamera();
+                hideForegroundNotification();
             } catch (Exception e) {
                 e.printStackTrace();
                 // TODO add logging
@@ -307,8 +309,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             if (!mRecorder.isRecording()) {
                 mRecorder = null;
                 stopLowStorageAlarm();
-                SimpleDateFormat sdf = new SimpleDateFormat("'TURNED OFF AT ' h:mm a");
-                showForegroundNotification(sdf.format(new Date()), false);
                 hideStatusBarRecordingIndicator();
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
@@ -450,6 +450,10 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         }
 
         startForeground(NOTIFICATION_ID, builder.build());
+    }
+
+    private void hideForegroundNotification() {
+        stopForeground(true);
     }
 
     private void flash(String text) {
