@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
@@ -212,12 +211,12 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         }
     }
 
-    public void toggleTrip() {
+    public void toggleTrip(boolean viaAutoStop) {
         if (mCameraEngine != null) {
             if (!isTripInProgress()) {
                 startTrip();
             } else {
-                stopTrip();
+                stopTrip(viaAutoStop);
             }
         } else {
             // TODO add logging
@@ -245,7 +244,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 break;
 
             case COMMAND_TOGGLE_TRIP:
-                toggleTrip();
+                toggleTrip(intent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false));
                 reRenderActivity();
                 break;
 
@@ -304,7 +303,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         }
     }
 
-    public void stopTrip() {
+    public void stopTrip(boolean viaAutoStop) {
         if (mRecorder != null) {
             mRecorder.stopRecording();
             if (!mRecorder.isRecording()) {
@@ -315,7 +314,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                     mTrip.setEndTimestamp(System.currentTimeMillis());
                     DB.Save saveCommand = new DB.Save(AuthUtils.getUserId(this), mTrip);
                     saveCommand.run();
-                    startSummaryActivity(mTrip.getId());
+                    onTripEnd(mTrip.getId(), viaAutoStop);
                     mTrip = null;
                 } else {
                     // TODO add logging
@@ -360,22 +359,16 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     @Override
     public void onRecorderError() {
         mAnalytics.logEvent("ERROR_RECORDING", null);
-        stopTrip();
+        stopTrip(false);
         flash(Copy.RIDE_INTERRUPTED);
         foregroundTripActivity();
     }
 
     public void onLowStorageError() {
         mAnalytics.logEvent("ERROR_LOW_STORAGE", null);
-        stopTrip();
+        stopTrip(false);
         flash(Copy.RIDE_LOW_STORAGE);
         foregroundTripActivity();
-    }
-
-    private void handleAutoStop() {
-        if (isTripInProgress()) {
-            stopTrip();
-        }
     }
 
     private void handleAutoStart() {
@@ -384,11 +377,11 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         }
     }
 
-    public void startSummaryActivity(String tripId) {
-        Intent intent = new Intent(getBaseContext(), TripSummaryActivity.class);
+    public void onTripEnd(String tripId, boolean viaAutoStop) {
+        Intent intent = new Intent(CameraFragment.ON_TRIP_END_EVENT);
         intent.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, tripId);
-        intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
+        intent.putExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, viaAutoStop);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     public void foregroundTripActivity() {

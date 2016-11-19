@@ -110,9 +110,6 @@ public class TripSummaryActivity extends AppCompatActivity implements SurfaceHol
         EditText editView = (EditText)findViewById(R.id.trip_name);
         DB.UpdateTripName updateTripName = new DB.UpdateTripName(AuthUtils.getUserId(this), mTripId, editView.getText().toString());
         updateTripName.run();
-        Intent intent = new Intent(this, TripActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        startActivity(intent);
         finish();
     }
 

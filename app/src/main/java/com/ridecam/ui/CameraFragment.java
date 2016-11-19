@@ -24,8 +24,6 @@ import android.view.LayoutInflater;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 
 import com.github.vignesh_iopex.confirmdialog.Confirm;
@@ -37,6 +35,7 @@ import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
 import com.ridecam.TripService;
+import com.ridecam.TripSummaryActivity;
 import com.ridecam.WeekViewActivity;
 import com.ridecam.av.CameraEngine;
 
@@ -45,6 +44,7 @@ public class CameraFragment extends Fragment {
     private static final String TAG = "CameraFragment";
 
     public static final String RERENDER_EVENT = "rerenderEvent";
+    public static final String ON_TRIP_END_EVENT = "onTripEndEvent";
 
     public static SurfaceTexture sCachedSurfaceTexture;
     public static TextureView.SurfaceTextureListener sTextureViewListener;
@@ -53,6 +53,7 @@ public class CameraFragment extends Fragment {
 
     private View mRootView;
     private BroadcastReceiver mReRenderReceiver;
+    private BroadcastReceiver mOnTripEndReceiver;
     private FirebaseAnalytics mAnalytics;
 
     public CameraFragment() {
@@ -90,7 +91,7 @@ public class CameraFragment extends Fragment {
         Log.d(TAG, "onStart");
         super.onStart();
 
-        // Construct a local broadcast receiver that listens for re-render events from the service
+        // Create local broadcast receivers that react to intents sent from service
         mReRenderReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -98,8 +99,23 @@ public class CameraFragment extends Fragment {
             }
         };
 
-        // Register for re-render events from service
+        mOnTripEndReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (getActivity() != null) {
+                    Intent summaryIntent = new Intent(getActivity(), TripSummaryActivity.class);
+                    summaryIntent.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, intent.getStringExtra(TripSummaryActivity.TRIP_ID_EXTRA));
+                    startActivity(summaryIntent);
+                    if (intent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
+                        getActivity().finish();
+                    }
+                }
+            }
+        };
+
+        // Register for events from service
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mReRenderReceiver, new IntentFilter(RERENDER_EVENT));
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mOnTripEndReceiver, new IntentFilter(ON_TRIP_END_EVENT));
     }
 
     @Override
@@ -191,6 +207,7 @@ public class CameraFragment extends Fragment {
 
         // Unregister for re-render events from service
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReRenderReceiver);
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mOnTripEndReceiver);
     }
 
     @Override
@@ -206,7 +223,7 @@ public class CameraFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 mAnalytics.logEvent("MANUAL_RECORD_TOGGLE", null);
-                toggleRecording(false);
+                toggleRecording(false, false);
             }
         });
 
@@ -222,7 +239,7 @@ public class CameraFragment extends Fragment {
         });
     }
 
-    public void toggleRecording(final boolean confirmStop) {
+    public void toggleRecording(final boolean confirmStop, final boolean viaAutoStop) {
         if (hasPermissions(getActivity())) {
             Intent checkInProgressIntent = new Intent(getActivity(), TripService.class);
             checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
@@ -231,19 +248,19 @@ public class CameraFragment extends Fragment {
                 protected void onReceiveResult(int code, Bundle data) {
                     boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
                     if (isInProgress && confirmStop) {
-                        Confirm.using(getActivity()).ask(Copy.RIDE_STOP_CONFIRM).onPositive("YES", new Dialog.OnClickListener() {
+                        Confirm.using(getActivity()).
+                                ask(Copy.RIDE_STOP_CONFIRM).
+                                onPositive("YES", new Dialog.OnClickListener() {
                             @Override public void onClick(final Dialog dialog, int which) {
-                                final Handler handler = new Handler();
-                                handler.postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        toggleRecording(false);
-                                    }
-                                }, 300); // HACK: wait for dialog to dismiss
-                            }}).onNegative("NO",  null).build().show();
+                                    toggleRecording(false, viaAutoStop);
+                                }}).
+                                onNegative("NO",  null).
+                                build().
+                                show();
                     } else {
                         Intent intent = new Intent(getActivity(), TripService.class);
                         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_TOGGLE_TRIP);
+                        intent.putExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, viaAutoStop);
                         getActivity().startService(intent);
                     }
                 }
@@ -303,8 +320,8 @@ public class CameraFragment extends Fragment {
                 getActivity().finish();
             } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
                 mAnalytics.logEvent("AUTO_RECORD_STOP", null);
-                // Confirm before automatically stopping
-                toggleRecording(true);
+                // Confirm before automatically stopping then exit app on finish
+                toggleRecording(true, true);
                 getActivity().setIntent(null);
             }
         }
