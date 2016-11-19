@@ -285,7 +285,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
                 flash(Copy.RIDE_START_CONFIRM);
-                SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT ' h:mm a");
+                SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), true);
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());
