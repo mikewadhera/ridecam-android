@@ -67,7 +67,12 @@ public class TripListActivity extends AppCompatActivity {
         if (mStarred) {
             setTitle("Starred");
         } else {
-            setTitle(intent.getStringExtra(TRIPS_TITLE_EXTRA));
+            String customTitle = intent.getStringExtra(TRIPS_TITLE_EXTRA);
+            if (customTitle != null) {
+                setTitle(customTitle);
+            } else {
+                setTitle(Copy.RIDE_LIST_TITLE);
+            }
         }
     }
 
@@ -76,18 +81,31 @@ public class TripListActivity extends AppCompatActivity {
         super.onResume();
 
         if (!mStarred) {
-            DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(
-                    AuthUtils.getUserId(this),
-                    mStartId,
-                    mEndId);
-            command.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
-                @Override
-                public void onResult(List<Trip> trips) {
-                    mTrips = trips.toArray(new Trip[trips.size()]);
-                    SimpleArrayAdapter adapter = new SimpleArrayAdapter(TripListActivity.this, mTrips);
-                    mListView.setAdapter(adapter);
+            if (mStartId != null && mEndId != null) {
+                DB.SimpleTripRangeQuery command = new DB.SimpleTripRangeQuery(
+                        AuthUtils.getUserId(this),
+                        mStartId,
+                        mEndId);
+                command.runAsync(new DB.SimpleTripRangeQuery.ResultListener() {
+                    @Override
+                    public void onResult(List<Trip> trips) {
+                        mTrips = trips.toArray(new Trip[trips.size()]);
+                        SimpleArrayAdapter adapter = new SimpleArrayAdapter(TripListActivity.this, mTrips);
+                        mListView.setAdapter(adapter);
                     }
-            });
+                });
+            } else {
+                DB.LoadTrips command = new DB.LoadTrips(
+                        AuthUtils.getUserId(this));
+                command.runAsync(new DB.LoadTrips.ResultListener() {
+                    @Override
+                    public void onResult(List<Trip> trips) {
+                        mTrips = trips.toArray(new Trip[trips.size()]);
+                        SimpleArrayAdapter adapter = new SimpleArrayAdapter(TripListActivity.this, mTrips);
+                        mListView.setAdapter(adapter);
+                    }
+                });
+            }
         }
     }
 

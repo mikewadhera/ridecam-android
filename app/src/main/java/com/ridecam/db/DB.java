@@ -336,4 +336,37 @@ public abstract class DB {
 
     }
 
+    public static class LoadTrips extends DB {
+
+        public interface ResultListener {
+            void onResult(List<Trip> trips);
+        }
+
+        public LoadTrips(String userId) {
+            super(userId);
+        }
+
+        public void runAsync(final LoadTrips.ResultListener resultListener) {
+
+            DatabaseReference tripsRef = mTripsRef;
+
+            tripsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    ArrayList<Trip> result = new ArrayList<>();
+                    for (DataSnapshot tripDataSnapshot : dataSnapshot.getChildren()) {
+                        result.add(mapSimpleTrip(tripDataSnapshot));
+                    }
+                    resultListener.onResult(result);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {}
+            });
+
+        }
+
+
+    }
+
 }

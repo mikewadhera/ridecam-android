@@ -4,7 +4,7 @@
 x Fix event name warnings
 x Add confirm dialog on autostop
 x Remove border/chrome
-* Remove summary and weekly folders screens
+x Remove weekly folders screens
 x More visible RIDECAM ON
 * Show date/time in player
 x Hide notification when not recording

@@ -20,4 +20,6 @@ public class Copy {
 
     public static final String UPLOAD_RUNNING_NOTIFICATION = "Syncing";
 
+    public static final String RIDE_LIST_TITLE = "Videos";
+
 }

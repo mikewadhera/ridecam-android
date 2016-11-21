@@ -34,9 +34,9 @@ import com.mikepenz.iconics.IconicsDrawable;
 import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
+import com.ridecam.TripListActivity;
 import com.ridecam.TripService;
 import com.ridecam.TripSummaryActivity;
-import com.ridecam.WeekViewActivity;
 import com.ridecam.av.CameraEngine;
 
 public class CameraFragment extends Fragment {
@@ -233,7 +233,7 @@ public class CameraFragment extends Fragment {
             public void onClick(View view) {
                 TripActivity tripActivity = (TripActivity)getActivity();
 
-                Intent intent = new Intent(getActivity(), WeekViewActivity.class);
+                Intent intent = new Intent(getActivity(), TripListActivity.class);
                 startActivity(intent);
             }
         });
