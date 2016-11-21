@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
@@ -214,7 +215,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     public void toggleTrip(boolean viaAutoStop) {
         if (mCameraEngine != null) {
             if (!isTripInProgress()) {
-                startTrip();
+                startTrip(false);
             } else {
                 stopTrip(viaAutoStop);
             }
@@ -277,14 +278,21 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-    public void startTrip() {
+    public void startTrip(boolean viaAutoStart) {
         if (mCameraEngine != null) {
             String tripId = Trip.allocateId();
             mRecorder = new RecorderEngine(this, mCameraEngine, tripId);
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
-                flash(Copy.RIDE_START_CONFIRM);
+                long flashDelay = viaAutoStart ? Knobs.AUTOSTART_FLASH_DELAY : 0;
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        flash(Copy.RIDE_START_CONFIRM);
+                    }
+                }, flashDelay);
                 SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), true);
                 mTrip = new Trip(tripId);
@@ -373,7 +381,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     private void handleAutoStart() {
         if (!isTripInProgress()) {
-            startTrip();
+            startTrip(true);
         }
     }
 

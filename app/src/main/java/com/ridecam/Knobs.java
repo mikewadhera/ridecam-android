@@ -37,6 +37,8 @@ public class Knobs {
 
     public static final int AUTOSTART_IN_VEHICLE_MIN_CONFIDENCE = 55;
 
+    public static final long AUTOSTART_FLASH_DELAY = 1000;
+
     public static int getMaximumRecordingFileSizeBytes(Context context) {
         double factor = 0.97; // 97%
         return (int)Math.floor(factor * FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(context).getPath()));
