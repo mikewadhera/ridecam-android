@@ -17,7 +17,7 @@ public class Knobs {
 
     public static final int REC_BITRATE = 690000; // 690 kbit/sec
 
-    public static final int REC_FPS = 15;
+    public static final int REC_FPS = 7;
 
     public static final int REC_WIDTH = 1280;
 
