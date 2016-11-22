@@ -55,6 +55,7 @@ public class TripListActivity extends AppCompatActivity {
                 Intent intent = new Intent(TripListActivity.this, PlayerActivity.class);
                 intent.putExtra(PlayerActivity.TRIP_ID_EXTRA, trip.getId());
                 intent.putExtra(PlayerActivity.TRIP_VIDEO_URL_EXTRA, trip.getLocalOrRemoteVideoUrl(TripListActivity.this));
+                intent.putExtra(PlayerActivity.TRIP_START_EXTRA, trip.getStartTimestamp());
                 startActivity(intent);
             }
         });
