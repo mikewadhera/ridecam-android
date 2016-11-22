@@ -74,8 +74,8 @@ public class SamsungDualCamera implements CameraDevice<Object> {
         public void setFocusMode(String value) {
             try {
                 Method setFocusModeMethod = klass().getDeclaredMethod("setFocusMode", String.class);
-                if (value == CameraDevice.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO) {
-                    setFocusModeMethod.invoke(mParams, Utils.getFieldValue("com.sec.android.seccamera.SecCamera$Parameters.FOCUS_MODE_CONTINUOUS_VIDEO"));
+                if (value == CameraDevice.Parameters.FOCUS_MODE_INFINITY) {
+                    setFocusModeMethod.invoke(mParams, Utils.getFieldValue("com.sec.android.seccamera.SecCamera$Parameters.FOCUS_MODE_INFINITY"));
                 } else {
                     setFocusModeMethod.invoke(mParams, value);
                 }
