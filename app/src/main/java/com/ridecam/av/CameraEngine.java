@@ -61,6 +61,7 @@ public class CameraEngine {
                     setCameraDisplayOrientation(mCamera);
                     CameraDevice.Parameters params = mCamera.getParameters();
                     params.setPreviewSize(Knobs.PREVIEW_WIDTH, Knobs.PREVIEW_HEIGHT);
+                    params.setPictureSize(Knobs.PREVIEW_WIDTH, Knobs.PREVIEW_HEIGHT);
                     params.setPreviewFpsRange(Knobs.PREVIEW_FPS * 1000, Knobs.PREVIEW_FPS * 1000);
                     params.setFocusMode(CameraDevice.Parameters.FOCUS_MODE_INFINITY);
                     params.setVideoStabilization(true);

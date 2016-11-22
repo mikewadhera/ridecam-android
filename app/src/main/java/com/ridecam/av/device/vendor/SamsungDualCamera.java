@@ -103,6 +103,16 @@ public class SamsungDualCamera implements CameraDevice<Object> {
             }
         }
 
+        @Override
+        public void setPictureSize(int width, int height) {
+            try {
+                Method setPictureSizeMethod = klass().getDeclaredMethod("setPictureSize", Integer.TYPE, Integer.TYPE);
+                setPictureSizeMethod.invoke(mParams, width, height);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         public Object getUnderlyingParameters() {
             return mParams;
         }

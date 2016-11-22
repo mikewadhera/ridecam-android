@@ -55,6 +55,11 @@ public class OSCamera implements CameraDevice<Camera> {
             mParams.setRecordingHint(recordingHint);
         }
 
+        @Override
+        public void setPictureSize(int width, int height) {
+            mParams.setPictureSize(width, height);
+        }
+
         public Camera.Parameters getUnderlyingParameters() {
             return mParams;
         }
