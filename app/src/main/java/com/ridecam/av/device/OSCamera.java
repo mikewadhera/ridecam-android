@@ -50,6 +50,11 @@ public class OSCamera implements CameraDevice<Camera> {
             }
         }
 
+        @Override
+        public void setRecordingHint(boolean recordingHint) {
+            mParams.setRecordingHint(recordingHint);
+        }
+
         public Camera.Parameters getUnderlyingParameters() {
             return mParams;
         }

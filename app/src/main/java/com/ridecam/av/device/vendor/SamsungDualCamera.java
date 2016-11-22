@@ -93,6 +93,16 @@ public class SamsungDualCamera implements CameraDevice<Object> {
             }
         }
 
+        @Override
+        public void setRecordingHint(boolean recordingHint) {
+            try {
+                Method setRecordingHintMethod = klass().getDeclaredMethod("setRecordingHint", Boolean.TYPE);
+                setRecordingHintMethod.invoke(mParams, recordingHint);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         public Object getUnderlyingParameters() {
             return mParams;
         }
