@@ -7,8 +7,8 @@ android {
         applicationId 'com.ridecam'
         minSdkVersion 18
         targetSdkVersion 24
-        versionCode 6
-        versionName "0.3p2"
+        versionCode 7
+        versionName "0.4"
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
