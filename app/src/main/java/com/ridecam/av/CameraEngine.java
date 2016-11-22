@@ -63,6 +63,7 @@ public class CameraEngine {
                     params.setPreviewSize(Knobs.PREVIEW_WIDTH, Knobs.PREVIEW_HEIGHT);
                     params.setPreviewFpsRange(Knobs.PREVIEW_FPS * 1000, Knobs.PREVIEW_FPS * 1000);
                     params.setFocusMode(CameraDevice.Parameters.FOCUS_MODE_INFINITY);
+                    params.setVideoStabilization(true);
                     mCamera.setParameters(params);
 
                     mCamera.setPreviewTexture(mSurfaceTexture);

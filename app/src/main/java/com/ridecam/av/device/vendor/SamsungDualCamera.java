@@ -1,6 +1,7 @@
 package com.ridecam.av.device.vendor;
 
 import android.graphics.SurfaceTexture;
+import android.util.Pair;
 import android.view.SurfaceHolder;
 
 import com.ridecam.av.device.CameraDevice;
@@ -8,8 +9,6 @@ import com.ridecam.av.device.CameraDevice;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-
-import android.util.Pair;
 
 public class SamsungDualCamera implements CameraDevice<Object> {
 
@@ -79,6 +78,16 @@ public class SamsungDualCamera implements CameraDevice<Object> {
                 } else {
                     setFocusModeMethod.invoke(mParams, value);
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void setVideoStabilization(boolean toggle) {
+            try {
+                Method setVideoStabilizationMethod = klass().getDeclaredMethod("setVideoStabilization", Boolean.TYPE);
+                setVideoStabilizationMethod.invoke(mParams, toggle);
             } catch (Exception e) {
                 e.printStackTrace();
             }

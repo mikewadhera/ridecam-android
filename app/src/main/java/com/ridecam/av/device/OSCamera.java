@@ -43,6 +43,13 @@ public class OSCamera implements CameraDevice<Camera> {
             }
         }
 
+        @Override
+        public void setVideoStabilization(boolean toggle) {
+            if (mParams.isVideoStabilizationSupported()) {
+                mParams.setVideoStabilization(toggle);
+            }
+        }
+
         public Camera.Parameters getUnderlyingParameters() {
             return mParams;
         }

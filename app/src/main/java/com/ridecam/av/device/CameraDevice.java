@@ -17,6 +17,7 @@ public interface CameraDevice<E> {
         public void setPreviewSize(int width, int height);
         public void setPreviewFpsRange(int minFps, int maxFps);
         public void setFocusMode(String value);
+        public void setVideoStabilization(boolean toggle);
         //public void setRecordingHint(boolean recordingHint);
         //public void setPictureSize(int width, int height);
         public P getUnderlyingParameters();
