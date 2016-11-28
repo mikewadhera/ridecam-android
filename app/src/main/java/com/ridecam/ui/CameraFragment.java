@@ -31,6 +31,7 @@ import com.github.vignesh_iopex.confirmdialog.Dialog;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.IconicsDrawable;
+import com.phillipcalvin.iconbutton.IconButton;
 import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
@@ -103,9 +104,6 @@ public class CameraFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (getActivity() != null) {
-                    Intent summaryIntent = new Intent(getActivity(), TripSummaryActivity.class);
-                    summaryIntent.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, intent.getStringExtra(TripSummaryActivity.TRIP_ID_EXTRA));
-                    startActivity(summaryIntent);
                     if (intent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
                         getActivity().finish();
                     }
@@ -254,7 +252,14 @@ public class CameraFragment extends Fragment {
                             @Override public void onClick(final Dialog dialog, int which) {
                                     toggleRecording(false, viaAutoStop);
                                 }}).
-                                onNegative("NO",  null).
+                                onNegative("NO", new Dialog.OnClickListener() {
+                                    @Override
+                                    public void onClick(Dialog dialog, int which) {
+                                        if (getActivity() != null) {
+                                            getActivity().finish();
+                                        }
+                                    }
+                                }).
                                 build().
                                 show();
                     } else {
@@ -273,7 +278,7 @@ public class CameraFragment extends Fragment {
 
     public void render() {
         if (isAdded() && getActivity() != null) {
-            final RecordButton buttonView = (RecordButton)mRootView.findViewById(R.id.record_button);
+            final IconButton buttonView = (IconButton)mRootView.findViewById(R.id.record_button);
             final View previewView = mRootView.findViewById(R.id.record_frame);
             final View recordMessageView = mRootView.findViewById(R.id.record_message);
 
@@ -289,15 +294,11 @@ public class CameraFragment extends Fragment {
                             previewView.setBackgroundDrawable(getResources().getDrawable(R.drawable.record_frame_on));
                             buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
                             buttonView.setText(Copy.RIDE_END);
-                            Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam_off).color(Color.WHITE).sizeDp(24);
-                            buttonView.setIcon(icon);
                             recordMessageView.setVisibility(View.VISIBLE);
                         } else {
                             previewView.setBackgroundDrawable(null);
                             buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
                             buttonView.setText(Copy.RIDE_START);
-                            Drawable icon = new IconicsDrawable(getActivity()).icon(GoogleMaterial.Icon.gmd_videocam).color(Color.WHITE).sizeDp(24);
-                            buttonView.setIcon(icon);
                             recordMessageView.setVisibility(View.GONE);
                         }
                     }

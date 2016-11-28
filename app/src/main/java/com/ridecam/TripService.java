@@ -290,7 +290,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        flash(Copy.RIDE_START_CONFIRM);
+                        flash(Copy.RIDE_START_FLASH);
                     }
                 }, flashDelay);
                 SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT' h:mm a");
@@ -315,6 +315,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         if (mRecorder != null) {
             mRecorder.stopRecording();
             if (!mRecorder.isRecording()) {
+                flash(Copy.RIDE_END_FLASH);
                 mRecorder = null;
                 stopLowStorageAlarm();
                 hideStatusBarRecordingIndicator();

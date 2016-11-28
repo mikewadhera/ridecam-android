@@ -4,4 +4,5 @@
     <color name="colorPrimaryDark">#ba2a77</color>
     <color name="colorAccent">#de4695</color>
     <color name="text_shadow">#ad000000</color>
+    <color name="record_red">#e53935</color>
 </resources>

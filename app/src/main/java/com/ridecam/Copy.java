@@ -2,9 +2,13 @@ package com.ridecam;
 
 public class Copy {
 
-    public static final String RIDE_START = "START DRIVE";
+    public static final String RIDE_START = "TURN ON";
 
-    public static final String RIDE_END = "END DRIVE";
+    public static final String RIDE_END = "TURN OFF";
+
+    public static final String RIDE_START_FLASH = "RIDECAM ON";
+
+    public static final String RIDE_END_FLASH = "RIDECAM OFF";
 
     public static final String RIDE_START_CONFIRM = "RIDECAM ON";
 
@@ -16,7 +20,7 @@ public class Copy {
 
     public static final String CAMERA_ERROR = "Internal Camera Error";
 
-    public static final String RIDE_STOP_CONFIRM = "End Drive?";
+    public static final String RIDE_STOP_CONFIRM = "Turn Off?";
 
     public static final String UPLOAD_RUNNING_NOTIFICATION = "Syncing";
 
