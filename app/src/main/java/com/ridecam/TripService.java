@@ -509,10 +509,12 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     }
 
     private void say(String text) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            ttsGreater21(text);
-        } else {
-            ttsUnder20(text);
+        if (mTTS != null && mHasTTSInit) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ttsGreater21(text);
+            } else {
+                ttsUnder20(text);
+            }
         }
     }
 
