@@ -5,6 +5,8 @@ import android.content.Context;
 
 import com.ridecam.fs.FSUtils;
 
+import java.util.Locale;
+
 public class Knobs {
 
     public static final boolean FORCE_NATIVE_CAMERA = true;
@@ -43,5 +45,9 @@ public class Knobs {
         double factor = 0.97; // 97%
         return (int)Math.floor(factor * FSUtils.freeBytesAvailable(FSUtils.getVideoDirectory(context).getPath()));
     }
+
+    public static final Locale SPEECH_LOCALE = Locale.UK;
+
+    public static final float SPEECH_RATE = 0.85f;
 
 }

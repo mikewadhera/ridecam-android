@@ -10,7 +10,9 @@ public class Copy {
 
     public static final String RIDE_END_FLASH = "RIDECAM OFF";
 
-    public static final String RIDE_START_CONFIRM = "RIDECAM ON";
+    public static final String RIDE_START_SAY = "RIDE CAM ON";
+
+    public static final String RIDE_END_SAY = "RIDE CAM OFF";
 
     public static final String RIDE_START_FAIL = "RIDECAM ERROR";
 

@@ -1,5 +1,6 @@
 package com.ridecam;
 
+import android.annotation.TargetApi;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -7,9 +8,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.NotificationCompat;
@@ -36,6 +39,8 @@ import com.ridecam.ui.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
@@ -73,6 +78,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     private FirebaseAnalytics mAnalytics;
     private WindowManager mWindowManager;
     private View mLayoutView;
+    private TextToSpeech mTTS;
+    private boolean mHasTTSInit;
 
     public TripService() {
     }
@@ -82,6 +89,24 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         mAnalytics = FirebaseAnalytics.getInstance(this);
 
         Log.d(TAG, "onCreate");
+
+        mTTS = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                Log.d(TAG, "TextToSpeech_onInit()");
+                if (status == TextToSpeech.SUCCESS) {
+                    mTTS.setSpeechRate(Knobs.SPEECH_RATE);
+                    int result = mTTS.setLanguage(Knobs.SPEECH_LOCALE);
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Log.e(TAG, "Text to Speech locale not supported");
+                        return;
+                    }
+                    mHasTTSInit = true;
+                } else {
+                    Log.e(TAG, "Text to Speech failed to load");
+                }
+            }
+        });
 
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
 
@@ -108,6 +133,11 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         Log.d(TAG, "TripService onDestroy");
 
         // By design this should not be called much / only when app is killed
+
+        if (mTTS != null) {
+            mTTS.shutdown();
+            mHasTTSInit = false;
+        }
 
         mWindowManager.removeView(mLayoutView);
 
@@ -285,6 +315,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
+                say(Copy.RIDE_START_SAY);
                 long flashDelay = viaAutoStart ? Knobs.AUTOSTART_FLASH_DELAY : 0;
                 Handler handler = new Handler();
                 handler.postDelayed(new Runnable() {
@@ -315,6 +346,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
         if (mRecorder != null) {
             mRecorder.stopRecording();
             if (!mRecorder.isRecording()) {
+                say(Copy.RIDE_END_SAY);
                 flash(Copy.RIDE_END_FLASH);
                 mRecorder = null;
                 stopLowStorageAlarm();
@@ -448,8 +480,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 .setAutoCancel(false);
 
         if (recordStart) {
-            builder.setSound(Uri.parse("android.resource://"
-                    + getPackageName() + "/" + R.raw.pad_glow_chime));
+            //builder.setSound(Uri.parse("android.resource://"
+              //      + getPackageName() + "/" + R.raw.pad_glow_chime));
         }
 
         startForeground(NOTIFICATION_ID, builder.build());
@@ -474,6 +506,27 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     private AlarmManager getAlarmManager() {
         return (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+    }
+
+    private void say(String text) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            ttsGreater21(text);
+        } else {
+            ttsUnder20(text);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void ttsUnder20(String text) {
+        HashMap<String, String> map = new HashMap<>();
+        map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "MessageId");
+        mTTS.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void ttsGreater21(String text) {
+        String utteranceId=this.hashCode() + "";
+        mTTS.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
     }
 
 }
