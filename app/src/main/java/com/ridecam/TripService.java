@@ -3,11 +3,8 @@ package com.ridecam;
 import android.annotation.TargetApi;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.PixelFormat;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,13 +13,13 @@ import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.NotificationCompat;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,11 +37,14 @@ import com.ridecam.ui.Utils;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
+
+import wei.mark.standout.StandOutWindow;
+import wei.mark.standout.constants.StandOutFlags;
+import wei.mark.standout.ui.Window;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
-public class TripService extends Service implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
+public class TripService extends StandOutWindow implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
 
     private static final String TAG = "TripService";
 
@@ -63,12 +63,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
 
     public static final String RESULT_RECEIVER = "resultReceiver";
 
-    private static final int LayoutParamFlags = WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-            | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-            | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-            | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-            | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-
     private CameraEngine mCameraEngine;
     private RecorderEngine mRecorder;
     private GPSEngine mGPSEngine;
@@ -76,19 +70,15 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     private Trip mTrip;
     private PendingIntent mLowStorageAlarmIntent;
     private FirebaseAnalytics mAnalytics;
-    private WindowManager mWindowManager;
-    private View mLayoutView;
     private TextToSpeech mTTS;
     private boolean mHasTTSInit;
-
-    public TripService() {
-    }
 
     @Override
     public void onCreate() {
         mAnalytics = FirebaseAnalytics.getInstance(this);
 
         Log.d(TAG, "onCreate");
+        super.onCreate();
 
         mTTS = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
@@ -108,21 +98,6 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             }
         });
 
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                Utils.toPixels(2, displayMetrics),
-                WindowManager.LayoutParams.TYPE_TOAST,
-                LayoutParamFlags,
-                PixelFormat.TRANSPARENT);
-        params.gravity = Gravity.LEFT | Gravity.TOP;
-        mWindowManager = (WindowManager) this.getSystemService(WINDOW_SERVICE);
-        Display display = mWindowManager.getDefaultDisplay();
-        LayoutInflater inflater = LayoutInflater.from(this);
-        mLayoutView = inflater.inflate(R.layout.service_window, null);
-        mWindowManager.addView(mLayoutView, params);
-
         hideStatusBarRecordingIndicator();
 
         hideForegroundNotification();
@@ -132,6 +107,8 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     public void onDestroy() {
         Log.d(TAG, "TripService onDestroy");
 
+        super.onDestroy();
+
         // By design this should not be called much / only when app is killed
 
         if (mTTS != null) {
@@ -139,7 +116,7 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             mHasTTSInit = false;
         }
 
-        mWindowManager.removeView(mLayoutView);
+        hideStatusBarRecordingIndicator();
 
         try {
             if (isTripInProgress()) {
@@ -154,6 +131,37 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
             e.printStackTrace();
             // TODO add logging
         }
+    }
+
+    // Standout overrides
+
+    @Override
+    public String getAppName() {
+        return "Ridecam";
+    }
+
+    @Override
+    public int getAppIcon() {
+        return R.drawable.ic_stat_r;
+    }
+
+    @Override
+    public void createAndAttachView(int id, FrameLayout frame) {
+        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+        inflater.inflate(R.layout.service_trip, frame, true);
+    }
+
+    @Override
+    public StandOutLayoutParams getParams(int id, Window window) {
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        return new StandOutLayoutParams(id, display.getWidth(), Utils.toPixels(2, getResources().getDisplayMetrics()),
+                StandOutLayoutParams.TOP, StandOutLayoutParams.LEFT);
+    }
+
+    @Override
+    public int getFlags(int id) {
+        return super.getFlags(id) | StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
     }
 
     public boolean isTripInProgress() {
@@ -190,11 +198,11 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
     }
 
     private void showStatusBarRecordingIndicator() {
-        mLayoutView.setVisibility(View.VISIBLE);
+        StandOutWindow.show(this, this.getClass(), StandOutWindow.DEFAULT_ID);
     }
 
     private void hideStatusBarRecordingIndicator() {
-        mLayoutView.setVisibility(View.GONE);
+        StandOutWindow.closeAll(this, this.getClass());
     }
 
     // Alarm callbacks
@@ -295,9 +303,10 @@ public class TripService extends Service implements CameraEngine.ErrorListener, 
                 handleAutoStart();
                 break;
 
-            default:
-                // TODO add logging
-                Log.e(TAG, "Cannot start service with illegal commands");
+            case COMMAND_NONE:
+                // Important: need to call super here to let Standout run it's state changes
+                super.onStartCommand(intent, flags, startId);
+                break;
         }
 
         return START_STICKY;

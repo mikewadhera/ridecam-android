@@ -34,7 +34,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.2.0'
     compile 'com.android.support:design:24.2.0'
     testCompile 'junit:junit:4.12'
-    
     compile 'com.google.firebase:firebase-core:9.8.0'
     compile 'com.google.firebase:firebase-auth:9.8.0'
     compile 'com.google.firebase:firebase-database:9.8.0'
@@ -47,6 +46,7 @@ dependencies {
     compile 'com.github.vignesh-iopex:confirmdialog:2.0-rc1'
     compile 'com.google.android.gms:play-services:9.8.0'
     compile 'com.githang:com-phillipcalvin-iconbutton:1.0.1@aar'
+    compile project(':standout')
 }
 
 apply plugin: 'com.google.gms.google-services'
