@@ -18,7 +18,6 @@ public class TripActivity extends AppCompatActivity {
     private static final String TAG = "TripActivity";
 
     public static final String IS_FROM_AUTOSTART_EXTRA = "com.ridecam.TripActivity.IS_FROM_AUTOSTART_EXTRA";
-    public static final String IS_FROM_AUTOSTOP_EXTRA = "com.ridecam.TripActivity.IS_FROM_AUTOSTOP_EXTRA";
 
     @Override
     protected void onNewIntent(Intent intent) {

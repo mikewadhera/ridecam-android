@@ -53,25 +53,10 @@ public class PowerStateChangedReceiver extends BroadcastReceiver {
             Intent autoStartTripActivityService = new Intent(context, AutoStartService.class);
             context.stopService(autoStartTripActivityService);
 
-            // Only present activity / end trip dialog if currently recording
-            final Intent checkInProgressIntent = new Intent(context, TripService.class);
-            checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
-            checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
-                @Override
-                protected void onReceiveResult(int code, Bundle data) {
-                    boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
-                    if (isInProgress) {
-                        Log.d(TAG, "Recording in progress - foregrounding");
-                        Intent activity = new Intent(context, TripActivity.class);
-                        activity.putExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, true);
-                        activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(activity);
-                    } else {
-                        Log.d(TAG, "No recording in progress");
-                    }
-                }
-            });
-            context.startService(checkInProgressIntent);
+            mAnalytics.logEvent("AUTO_RECORD_STOP", null);
+            Intent autoStopIntent = new Intent(context, TripService.class);
+            autoStopIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ON_AUTOSTOP);
+            context.startService(autoStopIntent);
         }
     }
 

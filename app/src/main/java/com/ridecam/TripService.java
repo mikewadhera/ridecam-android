@@ -5,6 +5,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -58,6 +59,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     public static final int COMMAND_IS_TRIP_IN_PROGRESS = 3;
     public static final int COMMAND_ALARM_LOW_STORAGE = 4;
     public static final int COMMAND_ON_AUTOSTART = 5;
+    public static final int COMMAND_ON_AUTOSTOP = 6;
 
     public static final String RESULT_IS_TRIP_IN_PROGRESS = "isTripInProgressResult";
 
@@ -72,6 +74,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     private FirebaseAnalytics mAnalytics;
     private TextToSpeech mTTS;
     private boolean mHasTTSInit;
+    private View mRootView;
 
     @Override
     public void onCreate() {
@@ -98,9 +101,8 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
             }
         });
 
-        hideStatusBarRecordingIndicator();
-
-        hideForegroundNotification();
+        StandOutWindow.closeAll(this, this.getClass());
+        StandOutWindow.show(this, this.getClass(), StandOutWindow.DEFAULT_ID);
     }
 
     @Override
@@ -116,7 +118,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
             mHasTTSInit = false;
         }
 
-        hideStatusBarRecordingIndicator();
+        StandOutWindow.closeAll(this, this.getClass());
 
         try {
             if (isTripInProgress()) {
@@ -137,8 +139,10 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
 
     @Override
     public void createAndAttachView(int id, FrameLayout frame) {
+        Log.d(TAG, "createAndAttachView");
+
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-        inflater.inflate(R.layout.service_trip, frame, true);
+        mRootView = inflater.inflate(R.layout.service_trip, frame, true);
     }
 
     @Override
@@ -162,6 +166,50 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
     }
 
+    public void render(boolean showControls) {
+        Log.d(TAG, "render");
+
+        if (mRootView == null) return;
+
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        int width = display.getWidth();
+        int height;
+
+        if (showControls) {
+            height = Utils.toPixels(60, getResources().getDisplayMetrics());
+
+            if (isTripInProgress()) {
+                mRootView.setBackgroundColor(getResources().getColor(R.color.record_red));
+            } else {
+                mRootView.setBackgroundColor(Color.BLACK);
+            }
+
+        } else {
+            height = Utils.toPixels(2, getResources().getDisplayMetrics());
+
+            if (isTripInProgress()) {
+                mRootView.setBackgroundColor(getResources().getColor(R.color.record_red));
+            } else {
+                mRootView.setBackgroundColor(Color.TRANSPARENT);
+            }
+
+        }
+
+        StandOutLayoutParams layoutParams = new StandOutLayoutParams(StandOutWindow.DEFAULT_ID, width, height, StandOutLayoutParams.TOP, StandOutLayoutParams.LEFT);
+        updateViewLayout(StandOutWindow.DEFAULT_ID, layoutParams);
+
+        if (showControls) {
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    render(false);
+                }
+            }, 5000);
+        }
+    }
+
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -170,7 +218,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     // Activity state transitions
 
     public void handleOnResume() {
-        hideStatusBarRecordingIndicator();
+        render(false);
         if (!isTripInProgress()) {
             acquireCamera();
             startLocationUpdates();
@@ -178,21 +226,10 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     }
 
     public void handleOnStop() {
-        mLastCoordinate = null;
         if (!isTripInProgress()) {
             releaseCamera();
             stopLocationUpdates();
-        } else {
-            showStatusBarRecordingIndicator();
         }
-    }
-
-    private void showStatusBarRecordingIndicator() {
-        StandOutWindow.show(this, this.getClass(), StandOutWindow.DEFAULT_ID);
-    }
-
-    private void hideStatusBarRecordingIndicator() {
-        StandOutWindow.closeAll(this, this.getClass());
     }
 
     // Alarm callbacks
@@ -240,12 +277,12 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
     }
 
-    public void toggleTrip(boolean viaAutoStop) {
+    public void toggleTrip() {
         if (mCameraEngine != null) {
             if (!isTripInProgress()) {
-                startTrip(false);
+                startTrip();
             } else {
-                stopTrip(viaAutoStop);
+                stopTrip();
             }
         } else {
             // TODO add logging
@@ -273,8 +310,9 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
                 break;
 
             case COMMAND_TOGGLE_TRIP:
-                toggleTrip(intent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false));
+                toggleTrip();
                 reRenderActivity();
+                render(false);
                 break;
 
             case COMMAND_IS_TRIP_IN_PROGRESS:
@@ -293,6 +331,10 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
                 handleAutoStart();
                 break;
 
+            case COMMAND_ON_AUTOSTOP:
+                handleAutoStop();
+                break;
+
             case COMMAND_NONE:
                 // Important: need to call super here to let Standout run it's state changes
                 super.onStartCommand(intent, flags, startId);
@@ -307,7 +349,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-    public void startTrip(boolean viaAutoStart) {
+    public void startTrip() {
         if (mCameraEngine != null) {
             String tripId = Trip.allocateId();
             mRecorder = new RecorderEngine(this, mCameraEngine, tripId);
@@ -315,14 +357,6 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
                 say(Copy.RIDE_START_SAY);
-                long flashDelay = viaAutoStart ? Knobs.AUTOSTART_FLASH_DELAY : 0;
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        flash(Copy.RIDE_START_FLASH);
-                    }
-                }, flashDelay);
                 SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), true);
                 mTrip = new Trip(tripId);
@@ -341,20 +375,17 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
     }
 
-    public void stopTrip(boolean viaAutoStop) {
+    public void stopTrip() {
         if (mRecorder != null) {
             mRecorder.stopRecording();
             if (!mRecorder.isRecording()) {
                 say(Copy.RIDE_END_SAY);
-                flash(Copy.RIDE_END_FLASH);
                 mRecorder = null;
                 stopLowStorageAlarm();
-                hideStatusBarRecordingIndicator();
                 if (mTrip != null) {
                     mTrip.setEndTimestamp(System.currentTimeMillis());
                     DB.Save saveCommand = new DB.Save(AuthUtils.getUserId(this), mTrip);
                     saveCommand.run();
-                    onTripEnd(mTrip.getId(), viaAutoStop);
                     mTrip = null;
                 } else {
                     // TODO add logging
@@ -399,29 +430,29 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     @Override
     public void onRecorderError() {
         mAnalytics.logEvent("ERROR_RECORDING", null);
-        stopTrip(false);
+        stopTrip();
         flash(Copy.RIDE_INTERRUPTED);
         foregroundTripActivity();
     }
 
     public void onLowStorageError() {
         mAnalytics.logEvent("ERROR_LOW_STORAGE", null);
-        stopTrip(false);
+        stopTrip();
         flash(Copy.RIDE_LOW_STORAGE);
         foregroundTripActivity();
     }
 
     private void handleAutoStart() {
         if (!isTripInProgress()) {
-            startTrip(true);
+            startTrip();
+            render(true);
         }
     }
 
-    public void onTripEnd(String tripId, boolean viaAutoStop) {
-        Intent intent = new Intent(CameraFragment.ON_TRIP_END_EVENT);
-        intent.putExtra(TripSummaryActivity.TRIP_ID_EXTRA, tripId);
-        intent.putExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, viaAutoStop);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    private void handleAutoStop() {
+        if (isTripInProgress()) {
+            render(true);
+        }
     }
 
     public void foregroundTripActivity() {
@@ -441,6 +472,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         if (mGPSEngine != null) {
             mGPSEngine.stopLocationUpdates();
         }
+        mLastCoordinate = null;
     }
 
     @Override

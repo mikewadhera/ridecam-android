@@ -7,11 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
@@ -26,18 +24,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
-import com.github.vignesh_iopex.confirmdialog.Confirm;
-import com.github.vignesh_iopex.confirmdialog.Dialog;
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.mikepenz.google_material_typeface_library.GoogleMaterial;
-import com.mikepenz.iconics.IconicsDrawable;
 import com.phillipcalvin.iconbutton.IconButton;
 import com.ridecam.Copy;
 import com.ridecam.R;
 import com.ridecam.TripActivity;
 import com.ridecam.TripListActivity;
 import com.ridecam.TripService;
-import com.ridecam.TripSummaryActivity;
 import com.ridecam.av.CameraEngine;
 
 public class CameraFragment extends Fragment {
@@ -45,7 +38,6 @@ public class CameraFragment extends Fragment {
     private static final String TAG = "CameraFragment";
 
     public static final String RERENDER_EVENT = "rerenderEvent";
-    public static final String ON_TRIP_END_EVENT = "onTripEndEvent";
 
     public static SurfaceTexture sCachedSurfaceTexture;
     public static TextureView.SurfaceTextureListener sTextureViewListener;
@@ -54,7 +46,6 @@ public class CameraFragment extends Fragment {
 
     private View mRootView;
     private BroadcastReceiver mReRenderReceiver;
-    private BroadcastReceiver mOnTripEndReceiver;
     private FirebaseAnalytics mAnalytics;
 
     public CameraFragment() {
@@ -100,20 +91,8 @@ public class CameraFragment extends Fragment {
             }
         };
 
-        mOnTripEndReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (getActivity() != null) {
-                    if (intent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
-                        getActivity().finish();
-                    }
-                }
-            }
-        };
-
         // Register for events from service
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mReRenderReceiver, new IntentFilter(RERENDER_EVENT));
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mOnTripEndReceiver, new IntentFilter(ON_TRIP_END_EVENT));
     }
 
     @Override
@@ -146,7 +125,7 @@ public class CameraFragment extends Fragment {
                         intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                         getActivity().startService(intent);
                         render();
-                        resumeAutoStartStop();
+                        resumeAutoStart();
                     }
 
                     @Override
@@ -186,7 +165,7 @@ public class CameraFragment extends Fragment {
                 intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_ACTIVITY_ONRESUME);
                 getActivity().startService(intent);
                 render();
-                resumeAutoStartStop();
+                resumeAutoStart();
 
             }
         }
@@ -205,7 +184,6 @@ public class CameraFragment extends Fragment {
 
         // Unregister for re-render events from service
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReRenderReceiver);
-        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mOnTripEndReceiver);
     }
 
     @Override
@@ -221,7 +199,7 @@ public class CameraFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 mAnalytics.logEvent("MANUAL_RECORD_TOGGLE", null);
-                toggleRecording(false, false);
+                toggleRecording();
             }
         });
 
@@ -237,40 +215,11 @@ public class CameraFragment extends Fragment {
         });
     }
 
-    public void toggleRecording(final boolean confirmStop, final boolean viaAutoStop) {
+    public void toggleRecording() {
         if (hasPermissions(getActivity())) {
-            Intent checkInProgressIntent = new Intent(getActivity(), TripService.class);
-            checkInProgressIntent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_IS_TRIP_IN_PROGRESS);
-            checkInProgressIntent.putExtra(TripService.RESULT_RECEIVER, new ResultReceiver(new Handler()) {
-                @Override
-                protected void onReceiveResult(int code, Bundle data) {
-                    boolean isInProgress = data.getBoolean(TripService.RESULT_IS_TRIP_IN_PROGRESS);
-                    if (isInProgress && confirmStop) {
-                        Confirm.using(getActivity()).
-                                ask(Copy.RIDE_STOP_CONFIRM).
-                                onPositive("YES", new Dialog.OnClickListener() {
-                            @Override public void onClick(final Dialog dialog, int which) {
-                                    toggleRecording(false, viaAutoStop);
-                                }}).
-                                onNegative("NO", new Dialog.OnClickListener() {
-                                    @Override
-                                    public void onClick(Dialog dialog, int which) {
-                                        if (getActivity() != null) {
-                                            getActivity().finish();
-                                        }
-                                    }
-                                }).
-                                build().
-                                show();
-                    } else {
-                        Intent intent = new Intent(getActivity(), TripService.class);
-                        intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_TOGGLE_TRIP);
-                        intent.putExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, viaAutoStop);
-                        getActivity().startService(intent);
-                    }
-                }
-            });
-            getActivity().startService(checkInProgressIntent);
+            Intent intent = new Intent(getActivity(), TripService.class);
+            intent.putExtra(TripService.START_SERVICE_COMMAND, TripService.COMMAND_TOGGLE_TRIP);
+            getActivity().startService(intent);
         } else {
             // TODO add logging
         }
@@ -308,7 +257,7 @@ public class CameraFragment extends Fragment {
         }
     }
 
-    public void resumeAutoStartStop() {
+    public void resumeAutoStart() {
         Intent autoIntent = getActivity().getIntent();
 
         if (autoIntent != null) {
@@ -319,11 +268,6 @@ public class CameraFragment extends Fragment {
                 getActivity().setIntent(null);
                 getActivity().startService(intent);
                 getActivity().finish();
-            } else if (autoIntent.getBooleanExtra(TripActivity.IS_FROM_AUTOSTOP_EXTRA, false)) {
-                mAnalytics.logEvent("AUTO_RECORD_STOP", null);
-                // Confirm before automatically stopping then exit app on finish
-                toggleRecording(true, true);
-                getActivity().setIntent(null);
             }
         }
     }
