@@ -422,7 +422,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return The name.
 	 */
-	public abstract String getAppName();
+	public String getAppName() { return null; };
 
 	/**
 	 * Return the icon resource for every window in this implementation. The
@@ -431,7 +431,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return The icon.
 	 */
-	public abstract int getAppIcon();
+	public int getAppIcon() { return 0; };
 
 	/**
 	 * Create a new {@link View} corresponding to the id, and add it as a child
@@ -1114,37 +1114,6 @@ public abstract class StandOutWindow extends Service {
 		// add view to internal map
 		sWindowCache.putCache(id, getClass(), window);
 
-		// get the persistent notification
-		Notification notification = getPersistentNotification(id);
-
-		// show the notification
-		if (notification != null) {
-			notification.flags = notification.flags
-					| Notification.FLAG_NO_CLEAR;
-
-			// only show notification if not shown before
-			if (!startedForeground) {
-				// tell Android system to show notification
-				startForeground(
-						getClass().hashCode() + ONGOING_NOTIFICATION_ID,
-						notification);
-				startedForeground = true;
-			} else {
-				// update notification if shown before
-				mNotificationManager.notify(getClass().hashCode()
-						+ ONGOING_NOTIFICATION_ID, notification);
-			}
-		} else {
-			// notification can only be null if it was provided before
-			if (!startedForeground) {
-				throw new RuntimeException("Your StandOutWindow service must"
-						+ "provide a persistent notification."
-						+ "The notification prevents Android"
-						+ "from killing your service in low"
-						+ "memory situations.");
-			}
-		}
-
 		focus(id);
 
 		return window;
@@ -1288,16 +1257,6 @@ public abstract class StandOutWindow extends Service {
 						// remove view from internal map
 						sWindowCache.removeCache(id,
 								StandOutWindow.this.getClass());
-
-						// if we just released the last window, quit
-						if (getExistingIds().size() == 0) {
-							// tell Android to remove the persistent
-							// notification
-							// the Service will be shutdown by the system on low
-							// memory
-							startedForeground = false;
-							stopForeground(true);
-						}
 					}
 				});
 				window.getChildAt(0).startAnimation(animation);
@@ -1307,14 +1266,6 @@ public abstract class StandOutWindow extends Service {
 
 				// remove view from internal map
 				sWindowCache.removeCache(id, getClass());
-
-				// if we just released the last window, quit
-				if (sWindowCache.getCacheSize(getClass()) == 0) {
-					// tell Android to remove the persistent notification
-					// the Service will be shutdown by the system on low memory
-					startedForeground = false;
-					stopForeground(true);
-				}
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();

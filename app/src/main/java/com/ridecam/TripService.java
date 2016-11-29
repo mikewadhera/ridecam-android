@@ -136,16 +136,6 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     // Standout overrides
 
     @Override
-    public String getAppName() {
-        return "Ridecam";
-    }
-
-    @Override
-    public int getAppIcon() {
-        return R.drawable.ic_stat_r;
-    }
-
-    @Override
     public void createAndAttachView(int id, FrameLayout frame) {
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
         inflater.inflate(R.layout.service_trip, frame, true);
