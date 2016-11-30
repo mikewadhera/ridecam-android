@@ -19,11 +19,13 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.phillipcalvin.iconbutton.IconButton;
 import com.ridecam.auth.AuthUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
@@ -195,9 +197,9 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
     }
 
-    public void revealControlBar() {
+    public void revealControlBar(String message) {
         show(WINDOW_ID_CONTROL_BAR);
-        renderControlBar();
+        renderControlBar(message);
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
@@ -213,9 +215,21 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
     }
 
-    public void renderControlBar() {
+    public void renderControlBar(String message) {
         if (mControlBarView != null) {
             View view = mControlBarView.findViewById(R.id.control_bar);
+            TextView textView = (TextView) view.findViewById(R.id.control_bar_text);
+            textView.setText(message);
+
+            Button buttonView = (Button) mControlBarView.findViewById(R.id.control_bar_button);
+
+            if (isTripInProgress()) {
+                buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
+                buttonView.setText(Copy.RIDE_END);
+            } else {
+                buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
+                buttonView.setText(Copy.RIDE_START);
+            }
         }
     }
 
@@ -465,13 +479,13 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     private void handleAutoStart() {
         if (!isTripInProgress()) {
             startTrip();
-            revealControlBar();
+            revealControlBar("RIDECAM ON");
         }
     }
 
     private void handleAutoStop() {
         if (isTripInProgress()) {
-            revealControlBar();
+            revealControlBar("RIDECAM ON");
         }
     }
 
