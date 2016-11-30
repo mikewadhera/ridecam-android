@@ -52,8 +52,8 @@ public class Knobs {
 
     public static final int IN_PROGRESS_INDICATOR_HEIGHT_DP = 2;
 
-    public static final int CONTROL_BAR_HEIGHT_DP = 60;
+    public static final int CONTROL_BAR_HEIGHT_DP = 70;
 
-    public static final long CONTROL_BAR_AUTODISMISS_MS = 5000;
+    public static final long CONTROL_BAR_AUTODISMISS_MS = 10000;
 
 }

@@ -1,38 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/control_bar"
-    android:orientation="horizontal"
-    android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_vertical"
-    android:background="#000">
+    android:layout_width="match_parent"
+    android:background="#222">
 
-    <TextView
-        android:id="@+id/control_bar_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="16dp"
-        android:textColor="#FFF"
-        android:layout_marginLeft="12dp" />
+    <com.ridecam.ui.CircleView
+        android:id="@+id/circle"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_gravity="center_vertical|right"
+        android:layout_marginRight="12dp" />
 
-    <Button
-        android:id="@+id/control_bar_button"
-        android:layout_width="120dp"
-        android:layout_height="40dp"
-        android:gravity="center"
-        android:textSize="16dp"
-        android:layout_marginLeft="30dp"
-        android:layout_marginRight="20dp"
-        android:layout_weight="1" />
+    <LinearLayout
+        android:id="@+id/control_bar"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical">
 
-    <com.mikepenz.iconics.view.IconicsButton
-        android:text="{gmd-close}"
-        android:background="#00000000"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginRight="12dp"
-        android:textSize="24dp"
-        android:textColor="#FFF"/>
+        <TextView
+            android:id="@+id/control_bar_text"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:textSize="20dp"
+            android:textColor="#FFF"
+            android:layout_marginLeft="16dp" />
 
-</LinearLayout>
+        <Button
+            android:id="@+id/control_bar_button"
+            android:layout_width="110dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:textSize="16dp"
+            android:layout_marginLeft="30dp"
+            android:layout_marginRight="20dp"
+            android:layout_weight="1" />
+
+        <com.mikepenz.iconics.view.IconicsButton
+            android:id="@+id/control_bar_close_button"
+            android:text="{gmd-close}"
+            android:background="#00000000"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginRight="12dp"
+            android:textSize="26dp"
+            android:textColor="#FFF"/>
+
+    </LinearLayout>
+</FrameLayout>

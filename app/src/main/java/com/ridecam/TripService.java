@@ -5,6 +5,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,13 +20,14 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.phillipcalvin.iconbutton.IconButton;
 import com.ridecam.auth.AuthUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
@@ -34,6 +36,8 @@ import com.ridecam.fs.FSUtils;
 import com.ridecam.geo.GPSEngine;
 import com.ridecam.model.Trip;
 import com.ridecam.ui.CameraFragment;
+import com.ridecam.ui.CircleAngleAnimation;
+import com.ridecam.ui.CircleView;
 import com.ridecam.ui.Utils;
 
 import java.text.SimpleDateFormat;
@@ -45,6 +49,7 @@ import wei.mark.standout.constants.StandOutFlags;
 import wei.mark.standout.ui.Window;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+import static com.ridecam.R.id.circle;
 
 public class TripService extends StandOutWindow implements CameraEngine.ErrorListener, RecorderEngine.ErrorListener, GPSEngine.LocationListener {
 
@@ -79,6 +84,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     private TextToSpeech mTTS;
     private boolean mHasTTSInit;
     private View mControlBarView;
+    private Handler mControlBarAutoDismiss;
 
     @Override
     public void onCreate() {
@@ -179,6 +185,24 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         return super.getFlags(id) | StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
     }
 
+    @Override
+    public Animation getShowAnimation(int id) {
+        if (id == WINDOW_ID_CONTROL_BAR) {
+            return AnimationUtils.loadAnimation(this, R.anim.slide_down);
+        } else {
+            return super.getShowAnimation(id);
+        }
+    }
+
+    @Override
+    public Animation getCloseAnimation(int id) {
+        if (id == WINDOW_ID_CONTROL_BAR) {
+            return AnimationUtils.loadAnimation(this, R.anim.slide_up);
+        } else {
+            return null;
+        }
+    }
+
     public boolean isTripInProgress() {
         if (mRecorder == null) {
             return false;
@@ -198,10 +222,13 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     }
 
     public void revealControlBar(String message) {
+        if (mControlBarAutoDismiss != null) {
+            mControlBarAutoDismiss.removeCallbacksAndMessages(null);
+        }
         show(WINDOW_ID_CONTROL_BAR);
         renderControlBar(message);
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
+        mControlBarAutoDismiss = new Handler();
+        mControlBarAutoDismiss.postDelayed(new Runnable() {
             @Override
             public void run() {
                 dismissControlBar();
@@ -222,14 +249,44 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
             textView.setText(message);
 
             Button buttonView = (Button) mControlBarView.findViewById(R.id.control_bar_button);
+            buttonView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (isTripInProgress()) {
+                        stopTrip();
+                        revealControlBar("RIDECAM: OFF");
+                    } else {
+                        startTrip(false);
+                        revealControlBar("RIDECAM: ON");
+                    }
+                }
+            });
+
+            Button closeButtonView = (Button) mControlBarView.findViewById(R.id.control_bar_close_button);
+            closeButtonView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    CircleView circleView = (CircleView) mControlBarView.findViewById(circle);
+                    if (circleView.getAnimation() != null) {
+                        circleView.setAnimation(null);
+                        circleView.setAngle(0);
+                    }
+                    dismissControlBar();
+                }
+            });
 
             if (isTripInProgress()) {
-                buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on));
+                buttonView.setBackground(getResources().getDrawable(R.drawable.start_button_on_control_bar));
                 buttonView.setText(Copy.RIDE_END);
             } else {
                 buttonView.setBackground(getResources().getDrawable(R.drawable.start_button));
                 buttonView.setText(Copy.RIDE_START);
             }
+
+            CircleView circleView = (CircleView) mControlBarView.findViewById(circle);
+            CircleAngleAnimation animation = new CircleAngleAnimation(circleView, 360);
+            animation.setDuration(Knobs.CONTROL_BAR_AUTODISMISS_MS);
+            circleView.startAnimation(animation);
         }
     }
 
@@ -302,7 +359,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     public void toggleTrip() {
         if (mCameraEngine != null) {
             if (!isTripInProgress()) {
-                startTrip();
+                startTrip(false);
             } else {
                 stopTrip();
             }
@@ -333,18 +390,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
 
             case COMMAND_TOGGLE_TRIP:
                 toggleTrip();
-                // On stop add render delay to allow indicator to hide before record frame hides
-                if (!isTripInProgress()) {
-                    Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            reRenderActivity();
-                        }
-                    }, 200);
-                } else {
-                    reRenderActivity();
-                }
+                reRenderActivity();
                 break;
 
             case COMMAND_IS_TRIP_IN_PROGRESS:
@@ -381,7 +427,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-    public void startTrip() {
+    public void startTrip(boolean viaAutoStart) {
         if (mCameraEngine != null) {
             String tripId = Trip.allocateId();
             mRecorder = new RecorderEngine(this, mCameraEngine, tripId);
@@ -389,9 +435,19 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
                 showInProgressIndicator();
-                say(Copy.RIDE_START_SAY);
                 SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT' h:mm a");
-                showForegroundNotification(sdf.format(new Date()), true);
+                showForegroundNotification(sdf.format(new Date()), viaAutoStart);
+                long sayDelay = 0;
+                if (viaAutoStart) {
+                    sayDelay = 1000;
+                }
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        say(Copy.RIDE_START_SAY);
+                    }
+                }, sayDelay);
                 mTrip = new Trip(tripId);
                 mTrip.setStartTimestamp(System.currentTimeMillis());
                 if (mLastCoordinate != null) {
@@ -478,14 +534,14 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
 
     private void handleAutoStart() {
         if (!isTripInProgress()) {
-            startTrip();
-            revealControlBar("RIDECAM ON");
+            startTrip(true);
+            revealControlBar("RIDECAM: ON");
         }
     }
 
     private void handleAutoStop() {
         if (isTripInProgress()) {
-            revealControlBar("RIDECAM ON");
+            revealControlBar("RIDECAM: ON");
         }
     }
 
@@ -523,7 +579,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
     }
 
-    private void showForegroundNotification(String contentText, boolean recordStart) {
+    private void showForegroundNotification(String contentText, boolean playSound) {
         // Create intent that will bring our app to the front, as if it was tapped in the app
         // launcher
         Intent showTaskIntent = new Intent(getApplicationContext(), TripActivity.class);
@@ -544,9 +600,9 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
                 .setContentText(contentText)
                 .setAutoCancel(false);
 
-        if (recordStart) {
-            //builder.setSound(Uri.parse("android.resource://"
-              //      + getPackageName() + "/" + R.raw.pad_glow_chime));
+        if (playSound) {
+            builder.setSound(Uri.parse("android.resource://"
+                    + getPackageName() + "/" + R.raw.music_vibelong_doorbell));
         }
 
         startForeground(NOTIFICATION_ID, builder.build());
