@@ -36,8 +36,8 @@ public class OSCamera implements CameraDevice<Camera> {
         }
 
         public void setFocusMode(String value) {
-            if (value == FOCUS_MODE_INFINITY) {
-                mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
+            if (value == FOCUS_MODE_CONTINUOUS_VIDEO) {
+                mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
             } else {
                 mParams.setFocusMode(value);
             }

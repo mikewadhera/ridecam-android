@@ -12,7 +12,7 @@ public interface CameraDevice<E> {
 
     public interface Parameters<P> {
 
-        public static final String FOCUS_MODE_INFINITY = "infinity";
+        public static final String FOCUS_MODE_CONTINUOUS_VIDEO = "continuous-video";
 
         public void setPreviewSize(int width, int height);
         public void setPreviewFpsRange(int minFps, int maxFps);
