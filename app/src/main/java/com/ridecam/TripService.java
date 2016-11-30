@@ -5,7 +5,6 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -51,6 +50,9 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
 
     private static final int NOTIFICATION_ID = 1;
 
+    private static final int WINDOW_ID_INPROGRESS_INDICATOR = 1;
+    private static final int WINDOW_ID_CONTROL_BAR = 2;
+
     public static final String START_SERVICE_COMMAND = "startServiceCommands";
     public static final int COMMAND_NONE = -1;
     public static final int COMMAND_ACTIVITY_ONRESUME = 0;
@@ -74,7 +76,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     private FirebaseAnalytics mAnalytics;
     private TextToSpeech mTTS;
     private boolean mHasTTSInit;
-    private View mRootView;
+    private View mControlBarView;
 
     @Override
     public void onCreate() {
@@ -102,7 +104,6 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         });
 
         StandOutWindow.closeAll(this, this.getClass());
-        StandOutWindow.show(this, this.getClass(), StandOutWindow.DEFAULT_ID);
     }
 
     @Override
@@ -142,15 +143,33 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         Log.d(TAG, "createAndAttachView");
 
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-        mRootView = inflater.inflate(R.layout.service_trip, frame, true);
+
+        if (id == WINDOW_ID_INPROGRESS_INDICATOR) {
+            inflater.inflate(R.layout.service_inprogress_indicator, frame, true);
+        } else if (id == WINDOW_ID_CONTROL_BAR) {
+            mControlBarView = inflater.inflate(R.layout.service_control_bar, frame, true);
+        } else {
+            throw new IllegalArgumentException("Unknown window ID: " + id);
+        }
     }
 
     @Override
     public StandOutLayoutParams getParams(int id, Window window) {
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
-        return new StandOutLayoutParams(id, display.getWidth(), Utils.toPixels(2, getResources().getDisplayMetrics()),
-                StandOutLayoutParams.TOP, StandOutLayoutParams.LEFT);
+        int width = display.getWidth();
+        int height;
+        int yPos;
+        if (id == WINDOW_ID_INPROGRESS_INDICATOR) {
+            height = Utils.toPixels(Knobs.IN_PROGRESS_INDICATOR_HEIGHT_DP, getResources().getDisplayMetrics());
+            yPos = 0;
+        } else if (id == WINDOW_ID_CONTROL_BAR) {
+            height = Utils.toPixels(Knobs.CONTROL_BAR_HEIGHT_DP, getResources().getDisplayMetrics());
+            yPos = Utils.toPixels(Knobs.IN_PROGRESS_INDICATOR_HEIGHT_DP, getResources().getDisplayMetrics());
+        } else {
+            throw new IllegalArgumentException("Unknown window ID: " + id);
+        }
+        return new StandOutLayoutParams(id, width, height, 0, yPos);
     }
 
     @Override
@@ -166,47 +185,37 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
     }
 
-    public void render(boolean showControls) {
-        Log.d(TAG, "render");
+    public void showInProgressIndicator() {
+        show(WINDOW_ID_INPROGRESS_INDICATOR);
+    }
 
-        if (mRootView == null) return;
-
-        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        Display display = windowManager.getDefaultDisplay();
-        int width = display.getWidth();
-        int height;
-
-        if (showControls) {
-            height = Utils.toPixels(60, getResources().getDisplayMetrics());
-
-            if (isTripInProgress()) {
-                mRootView.setBackgroundColor(getResources().getColor(R.color.record_red));
-            } else {
-                mRootView.setBackgroundColor(Color.BLACK);
-            }
-
-        } else {
-            height = Utils.toPixels(2, getResources().getDisplayMetrics());
-
-            if (isTripInProgress()) {
-                mRootView.setBackgroundColor(getResources().getColor(R.color.record_red));
-            } else {
-                mRootView.setBackgroundColor(Color.TRANSPARENT);
-            }
-
+    public void hideInProgressIndicator() {
+        if (getWindow(WINDOW_ID_INPROGRESS_INDICATOR) != null) {
+            close(WINDOW_ID_INPROGRESS_INDICATOR);
         }
+    }
 
-        StandOutLayoutParams layoutParams = new StandOutLayoutParams(StandOutWindow.DEFAULT_ID, width, height, StandOutLayoutParams.TOP, StandOutLayoutParams.LEFT);
-        updateViewLayout(StandOutWindow.DEFAULT_ID, layoutParams);
+    public void revealControlBar() {
+        show(WINDOW_ID_CONTROL_BAR);
+        renderControlBar();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                dismissControlBar();
+            }
+        }, Knobs.CONTROL_BAR_AUTODISMISS_MS);
+    }
 
-        if (showControls) {
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    render(false);
-                }
-            }, 5000);
+    public void dismissControlBar() {
+        if (getWindow(WINDOW_ID_CONTROL_BAR) != null) {
+            close(WINDOW_ID_CONTROL_BAR);
+        }
+    }
+
+    public void renderControlBar() {
+        if (mControlBarView != null) {
+            View view = mControlBarView.findViewById(R.id.control_bar);
         }
     }
 
@@ -218,7 +227,6 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     // Activity state transitions
 
     public void handleOnResume() {
-        render(false);
         if (!isTripInProgress()) {
             acquireCamera();
             startLocationUpdates();
@@ -311,8 +319,18 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
 
             case COMMAND_TOGGLE_TRIP:
                 toggleTrip();
-                reRenderActivity();
-                render(false);
+                // On stop add render delay to allow indicator to hide before record frame hides
+                if (!isTripInProgress()) {
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            reRenderActivity();
+                        }
+                    }, 200);
+                } else {
+                    reRenderActivity();
+                }
                 break;
 
             case COMMAND_IS_TRIP_IN_PROGRESS:
@@ -356,6 +374,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
             mRecorder.setErrorListener(this);
             mRecorder.startRecording();
             if (mRecorder.isRecording()) {
+                showInProgressIndicator();
                 say(Copy.RIDE_START_SAY);
                 SimpleDateFormat sdf = new SimpleDateFormat("'TURNED ON AT' h:mm a");
                 showForegroundNotification(sdf.format(new Date()), true);
@@ -379,6 +398,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         if (mRecorder != null) {
             mRecorder.stopRecording();
             if (!mRecorder.isRecording()) {
+                hideInProgressIndicator();
                 say(Copy.RIDE_END_SAY);
                 mRecorder = null;
                 stopLowStorageAlarm();
@@ -445,13 +465,13 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     private void handleAutoStart() {
         if (!isTripInProgress()) {
             startTrip();
-            render(true);
+            revealControlBar();
         }
     }
 
     private void handleAutoStop() {
         if (isTripInProgress()) {
-            render(true);
+            revealControlBar();
         }
     }
 

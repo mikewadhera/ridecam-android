@@ -3,5 +3,5 @@
     android:id="@+id/service_window_bar"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#00000000"
+    android:background="@color/record_red"
     />
