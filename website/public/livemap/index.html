@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<script src="https://www.gstatic.com/firebasejs/3.6.1/firebase.js"></script>
+<script>
+
+USER_ID = "d859b3d7-cdb2-4be6-b3c2-8283e4716f4a";
+
+// Firebase
+var config = {
+  databaseURL: "https://ridecam-b2023.firebaseio.com"
+};
+firebase.initializeApp(config);
+var db = firebase.database();
+var markersRef = db.ref('locations/' + USER_ID);
+
+var map;
+var markers = {};
+
+function addPoint(uuid, lat, lng) {
+  var marker = new google.maps.Marker({
+            position: { lat: lat, lng: lng },
+            map: map
+          });
+
+  markers[uuid] = marker;
+}
+
+function removePoint(uuid) {
+  if (markers[uuid]) {
+    markers[uuid].setMap(null);
+  }
+}
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 14,
+    center: {lat: 37.78141225, lng: -122.45717449} 
+  });
+  markersRef.limitToLast(1).on('child_added', function(latestTrip) {
+    console.log("New Trip: " + latestTrip.key);
+    latestTrip.ref.limitToLast(1).on("child_added", function(latestCoordinate) {
+      console.log("New Coordinate: " + latestCoordinate.key + " " + latestCoordinate.val().x + " " + latestCoordinate.val().y);
+      removePoint(USER_ID);
+      addPoint(USER_ID, latestCoordinate.val().x, latestCoordinate.val().y);
+    });
+  });  
+}
+</script>
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB79OQwLphhi7yCYgqoXlljR_TrbYzVgcA&callback=initMap">
+    </script>
+
+
+</body>
+</html>

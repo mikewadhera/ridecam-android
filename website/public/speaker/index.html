@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+</head>
+<body>
+
+<div id='form'>
+  <textarea name="text" id="text"></textarea>
+  <button type="button" onclick="speak();">Speak</button>
+</div>
+<script src="https://www.gstatic.com/firebasejs/3.6.1/firebase.js"></script>
+<script>
+
+// Firebase
+var config = {
+  databaseURL: "https://ridecam-b2023.firebaseio.com"
+};
+firebase.initializeApp(config);
+var db = firebase.database();
+var soundsRef = db.ref('sounds');
+
+function speak() {
+  var url = document.getElementById("text").value;
+  soundsRef.push(url);
+}
+</script>
+</body>
+</html>
