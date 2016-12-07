@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class OSCamera implements CameraDevice<Camera> {
 
-    private static final int CAMERA_ID = 0;
+    private static final int CAMERA_ID = 1;
 
     private Camera mCamera;
 
