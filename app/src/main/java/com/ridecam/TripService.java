@@ -173,6 +173,11 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
             db.removeEventListener(dbListener);
         }
 
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer = null;
+        }
+
         try {
             if (isTripInProgress()) {
                 // This is VERY bad
