@@ -24,7 +24,7 @@ var soundsRef = db.ref('sounds');
 
 function speak() {
   var url = document.getElementById("text").value;
-  soundsRef.push(url);
+  soundsRef.push({url: url, timestamp: (new Date).getTime()});
 }
 </script>
 </body>

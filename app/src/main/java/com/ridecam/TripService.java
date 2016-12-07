@@ -126,10 +126,12 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         StandOutWindow.closeAll(this, this.getClass());
 
         db = FirebaseDatabase.getInstance().getReference().child("sounds");
-        dbListener = db.addChildEventListener(new ChildEventListener() {
+        dbListener = db.orderByChild("timestamp").startAt(System.currentTimeMillis()).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                playSound((String)dataSnapshot.getValue());
+                Log.d(TAG, "onChildAdded");
+                HashMap<String,String> value = (HashMap<String,String>)dataSnapshot.getValue();
+                playSound(value.get("url"));
             }
 
             @Override
@@ -175,6 +177,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
 
         if (mediaPlayer != null) {
             mediaPlayer.stop();
+            mediaPlayer.release();
             mediaPlayer = null;
         }
 
@@ -702,15 +705,24 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     }
 
     private void playSound(String url) {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-        }
+        Log.d(TAG, url);
         try {
-            mediaPlayer = new MediaPlayer();
+            if (mediaPlayer != null) {
+                mediaPlayer.stop();
+                mediaPlayer.reset();
+            } else {
+                mediaPlayer = new MediaPlayer();
+            }
+
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mediaPlayer.setDataSource(url);
-            mediaPlayer.prepare();
-            mediaPlayer.start();
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mediaPlayer) {
+                    if (mediaPlayer != null) mediaPlayer.start();
+                }
+            });
         } catch (IOException e) {
             mAnalytics.logEvent("ERROR_SOUND", null);
             e.printStackTrace();
