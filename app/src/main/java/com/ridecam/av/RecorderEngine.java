@@ -83,7 +83,7 @@ public class RecorderEngine {
             mRecorder.setCamera(mCameraEngine.getDevice());
 
             Log.d(TAG, "R: Setting Camera orientation hint");
-            mRecorder.setOrientationHint(90);
+            mRecorder.setOrientationHint(270);
 
             Log.d(TAG, "R: Setting sources");
             mRecorder.setVideoSource(OSRecorder.VideoSource.CAMERA);
