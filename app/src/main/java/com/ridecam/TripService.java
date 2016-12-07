@@ -29,6 +29,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.danikula.videocache.HttpProxyCacheServer;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -96,6 +97,7 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     DatabaseReference db;
     ChildEventListener dbListener;
     MediaPlayer mediaPlayer;
+    HttpProxyCacheServer proxyCacheServer;
 
 
     @Override
@@ -714,8 +716,14 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
                 mediaPlayer = new MediaPlayer();
             }
 
+            if (proxyCacheServer == null) {
+                proxyCacheServer = new HttpProxyCacheServer(this);
+            }
+
+            String proxyUrl = proxyCacheServer.getProxyUrl(url);
+
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mediaPlayer.setDataSource(url);
+            mediaPlayer.setDataSource(proxyUrl);
             mediaPlayer.prepareAsync();
             mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
