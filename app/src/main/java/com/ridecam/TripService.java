@@ -5,6 +5,8 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,6 +30,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.ridecam.auth.AuthUtils;
 import com.ridecam.av.CameraEngine;
 import com.ridecam.av.RecorderEngine;
@@ -40,6 +47,7 @@ import com.ridecam.ui.CircleAngleAnimation;
 import com.ridecam.ui.CircleView;
 import com.ridecam.ui.Utils;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -85,6 +93,10 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     private boolean mHasTTSInit;
     private View mControlBarView;
     private Handler mControlBarAutoDismiss;
+    DatabaseReference db;
+    ChildEventListener dbListener;
+    MediaPlayer mediaPlayer;
+
 
     @Override
     public void onCreate() {
@@ -112,6 +124,34 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         });
 
         StandOutWindow.closeAll(this, this.getClass());
+
+        db = FirebaseDatabase.getInstance().getReference().child("sounds");
+        dbListener = db.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                playSound((String)dataSnapshot.getValue());
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     @Override
@@ -128,6 +168,10 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
         }
 
         StandOutWindow.closeAll(this, this.getClass());
+
+        if (db != null && dbListener != null) {
+            db.removeEventListener(dbListener);
+        }
 
         try {
             if (isTripInProgress()) {
@@ -650,6 +694,22 @@ public class TripService extends StandOutWindow implements CameraEngine.ErrorLis
     private void ttsGreater21(String text) {
         String utteranceId=this.hashCode() + "";
         mTTS.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+    }
+
+    private void playSound(String url) {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+        }
+        try {
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+        } catch (IOException e) {
+            mAnalytics.logEvent("ERROR_SOUND", null);
+            e.printStackTrace();
+        }
     }
 
 }
